@@ -32,6 +32,16 @@
 
   <script>
     // Firebase অথেন্টিকেশন
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
+  authDomain: "my-app-a5b52.firebaseapp.com",
+  projectId: "my-app-a5b52",
+  storageBucket: "my-app-a5b52.firebasestorage.app",
+  messagingSenderId: "213828908146",
+  appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
+  measurementId: "G-RX02N4FEEH"
+};
     auth.onAuthStateChanged((user) => {
       if (user) {
         // রোল চেক করুন
