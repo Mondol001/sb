@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>কর্মীর মাসিক হাজিরা ও ওভারটাইম এন্ট্রি</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+    }
+    body {
+      background: #f8f9fa;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    .header-section {
+      border-bottom: 3px solid var(--primary-color);
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .employee-selector {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .form-control:focus {
+      border-color: var(--secondary-color);
+      box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    }
+    .btn-primary {
+      background-color: var(--secondary-color);
+      border: none;
+      padding: 10px 25px;
+      transition: all 0.3s;
+    }
+    .btn-primary:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+    }
+    .table-hover tbody tr:hover {
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+    .badge {
+      font-size: 0.9em;
+      padding: 8px 12px;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      .print-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- হেডার সেকশন -->
+    <div class="header-section">
+      <h1 class="text-center mb-4 text-primary">
+        <i class="fas fa-clipboard-list"></i> কর্মী হাজিরা ব্যবস্থাপনা সিস্টেম
+      </h1>
+      
+      <!-- কর্মী নির্বাচনকারী -->
+      <div class="employee-selector">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-8">
+            <label class="form-label">
+              <i class="fas fa-user-tie"></i> কর্মী নির্বাচন করুন:
+            </label>
+            <select id="employeeSelect" class="form-select form-select-lg">
+              <option value="">কর্মী নির্বাচন করুন...</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <div class="d-grid">
+              <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#newEmployeeModal">
+                <i class="fas fa-plus-circle"></i> নতুন কর্মী যোগ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- নির্বাচিত কর্মীর তথ্য -->
+      <div class="selected-employee-info mb-4 no-print">
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h4 class="card-title">
+                  <span id="selectedEmployeeName">নাম: </span>
+                  <span class="badge bg-primary" id="selectedEmployeeId"></span>
+                </h4>
+              </div>
+              <div class="col-md-6 text-end">
+                <button class="btn btn-outline-danger btn-sm" id="clearSelection">
+                  <i class="fas fa-times"></i> নির্বাচন বাতিল করুন
+                </button>
+                <button class="btn btn-danger btn-sm" id="logoutBtn">
+                  <i class="fas fa-sign-out-alt"></i> লগআউট
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- মাস ও বছর নির্বাচন -->
+    <div class="month-year-selection mb-4 no-print">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="monthSelect" class="form-label">মাস:</label>
+          <select id="monthSelect" class="form-select">
+            <option value="0">জানুয়ারী</option>
+            <option value="1">ফেব্রুয়ারী</option>
+            <option value="2">মার্চ</option>
+            <option value="3">এপ্রিল</option>
+            <option value="4">মে</option>
+            <option value="5">জুন</option>
+            <option value="6">জুলাই</option>
+            <option value="7">আগস্ট</option>
+            <option value="8">সেপ্টেম্বর</option>
+            <option value="9">অক্টোবর</option>
+            <option value="10">নভেম্বর</option>
+            <option value="11">ডিসেম্বর</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="yearSelect" class="form-label">বছর:</label>
+          <select id="yearSelect" class="form-select"></select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button id="loadMonth" class="btn btn-primary w-100">মাস লোড করুন</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- দৈনিক এন্ট্রি ফর্ম -->
+    <div class="daily-entry mb-4 no-print">
+      <h2 class="mb-3">আজকের এন্ট্রি</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="entryDate" class="form-label">তারিখ:</label>
+          <input type="date" id="entryDate" class="form-control">
+          <span id="dateError" class="error text-danger"></span>
+        </div>
+        <div class="col-md-4">
+          <label for="attendanceStatus" class="form-label">হাজিরা:</label>
+          <select id="attendanceStatus" class="form-select">
+            <option value="">নির্বাচন করুন</option>
+            <option value="present">উপস্থিত</option>
+            <option value="absent">অনুপস্থিত</option>
+          </select>
+          <span id="attendanceError" class="error text-danger"></span>
+        </div>
+        <div class="col-md-4">
+          <label for="overtimeInput" class="form-label">ওভারটাইম (ঘণ্টা):</label>
+          <input type="number" id="overtimeInput" class="form-control" min="0" step="0.5" placeholder="0">
+        </div>
+        <div class="col-12">
+          <button id="saveEntry" class="btn btn-primary w-100">এন্ট্রি সংরক্ষণ করুন</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- মাসিক ডাটা টেবিল এবং ফলাফল -->
+    <div class="monthly-table">
+      <h2 class="mb-3 no-print">মাসিক এন্ট্রি</h2>
+      <div class="table-responsive">
+        <table id="attendanceTable" class="table table-bordered table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>তারিখ</th>
+              <th>হাজিরা</th>
+              <th>ওভারটাইম</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- প্রিন্ট বাটন -->
+      <div class="d-flex justify-content-center gap-2 mt-3 no-print">
+        <button id="printBtn" class="btn btn-primary">প্রিন্ট করুন</button>
+      </div>
+      
+      <!-- হিসাব ফলাফল -->
+      <div id="result" class="mt-3 p-3 bg-light rounded"></div>
+    </div>
+  </div>
+
+  <!-- নতুন কর্মী মডাল -->
+  <div class="modal fade" id="newEmployeeModal" tabindex="-1" aria-labelledby="newEmployeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="newEmployeeModalLabel">
+            <i class="fas fa-user-plus"></i> নতুন কর্মী যোগ করুন
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ করুন"></button>
+        </div>
+        <div class="modal-body">
+          <form id="newEmployeeForm">
+            <div class="mb-3">
+              <label class="form-label">কর্মীর নাম</label>
+              <input type="text" class="form-control" id="newEmployeeName" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">কর্মী আইডি</label>
+              <input type="text" class="form-control" id="newEmployeeId" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">জমার তারিখ</label>
+              <input type="date" class="form-control" id="newEmployeeJoinDate" required>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">বাতিল</button>
+          <button type="submit" form="newEmployeeForm" class="btn btn-primary">সংরক্ষণ করুন</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle (includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Firebase কনফিগারেশন
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-WhTe1Kqx4IRaeg_w9s-diHKPE6i6uaE",
+      authDomain: "data-entry-app-3923a.firebaseapp.com",
+      databaseURL: "https://data-entry-app-3923a-default-rtdb.firebaseio.com",
+      projectId: "data-entry-app-3923a",
+      storageBucket: "data-entry-app-3923a.appspot.com",
+      messagingSenderId: "638964410595",
+      appId: "1:638964410595:web:80c8ffa7fe8fc1a48cbdd6",
+      measurementId: "G-01NQ8H9KB7"
+    };
+
+    // Firebase ইনিশিয়ালাইজেশন
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // DOM উপাদানসমূহ
+    const employeeSelect = document.getElementById('employeeSelect');
+    const selectedEmployeeName = document.getElementById('selectedEmployeeName');
+    const selectedEmployeeId = document.getElementById('selectedEmployeeId');
+    const clearSelectionBtn = document.getElementById('clearSelection');
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    const loadMonthBtn = document.getElementById('loadMonth');
+    const entryDateInput = document.getElementById('entryDate');
+    const attendanceStatusSelect = document.getElementById('attendanceStatus');
+    const overtimeInput = document.getElementById('overtimeInput');
+    const saveEntryBtn = document.getElementById('saveEntry');
+    const attendanceTableBody = document.querySelector('#attendanceTable tbody');
+    const resultDiv = document.getElementById('result');
+    const printBtn = document.getElementById('printBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // ইনপুট ফিল্ডে ডিফল্ট তারিখ (আজকের তারিখ) সেট করা
+    entryDateInput.value = new Date().toISOString().split('T')[0];
+
+    // বর্তমান মাস ও বছর ডিফল্ট হিসেবে সেট করা
+    const currentDate = new Date();
+    monthSelect.value = currentDate.getMonth();
+    const currentYearVal = currentDate.getFullYear();
+    for (let y = currentYearVal - 5; y <= currentYearVal + 5; y++) {
+      const option = document.createElement('option');
+      option.value = y;
+      option.textContent = y;
+      yearSelect.appendChild(option);
+    }
+    yearSelect.value = currentYearVal;
+
+    // Firebase Auth স্টেট চেক
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else if (user.email !== 'user@admin.com') {
+        window.location.href = 'report.html';
+      } else {
+        loadEmployees();
+      }
+    });
+
+    // কর্মী লোড করার ফাংশন
+    async function loadEmployees() {
+      try {
+        const snapshot = await db.collection('employees').get();
+        employeeSelect.innerHTML = '<option value="">কর্মী নির্বাচন করুন...</option>';
+        snapshot.forEach(doc => {
+          const employee = doc.data();
+          const option = document.createElement('option');
+          option.value = doc.id;
+          option.textContent = `${employee.name} (${employee.employeeId})`;
+          employeeSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('কর্মী লোড করতে ত্রুটি:', error);
+      }
+    }
+
+    // মাস ও এন্ট্রি লোড করার ফাংশন
+    async function loadMonthlyAttendance() {
+      if (!employeeSelect.value) return;
+      const month = parseInt(monthSelect.value);
+      const year = parseInt(yearSelect.value);
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0);
+
+      try {
+        const snapshot = await db.collection('employees')
+          .doc(employeeSelect.value)
+          .collection('attendance')
+          .where('date', '>=', startDate)
+          .where('date', '<=', endDate)
+          .get();
+
+        attendanceTableBody.innerHTML = '';
+        let totalPresent = 0;
+        let totalOvertime = 0;
+        if (snapshot.empty) {
+          attendanceTableBody.innerHTML = `<tr><td colspan="3" class="text-center">কোন এন্ট্রি নেই</td></tr>`;
+        } else {
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const entryDate = data.date && data.date.toDate ? data.date.toDate() : new Date(data.date);
+            if (data.status === 'present') totalPresent++;
+            totalOvertime += data.overtime;
+            const row = `
+              <tr>
+                <td>${entryDate.toLocaleDateString('bn-BD')}</td>
+                <td>${data.status === 'present' ? 'উপস্থিত' : 'অনুপস্থিত'}</td>
+                <td>${data.overtime}</td>
+              </tr>
+            `;
+            attendanceTableBody.innerHTML += row;
+          });
+        }
+        resultDiv.innerHTML = `
+          <h4>মোট উপস্থিতি: ${totalPresent} দিন</h4>
+          <h4>মোট ওভারটাইম: ${totalOvertime} ঘণ্টা</h4>
+        `;
+      } catch (error) {
+        console.error('মাস লোড করতে ত্রুটি:', error);
+      }
+    }
+
+    // কর্মী নির্বাচন ইভেন্ট
+    employeeSelect.addEventListener('change', async () => {
+      if (employeeSelect.value) {
+        const doc = await db.collection('employees').doc(employeeSelect.value).get();
+        if (doc.exists) {
+          const data = doc.data();
+          selectedEmployeeName.textContent = data.name;
+          selectedEmployeeId.textContent = `আইডি: ${data.employeeId}`;
+          loadMonthlyAttendance();
+        }
+      } else {
+        selectedEmployeeName.textContent = 'নাম: ';
+        selectedEmployeeId.textContent = '';
+        attendanceTableBody.innerHTML = '';
+        resultDiv.innerHTML = '';
+      }
+    });
+
+    // কর্মী নির্বাচন বাতিল
+    clearSelectionBtn.addEventListener('click', () => {
+      employeeSelect.value = '';
+      selectedEmployeeName.textContent = 'নাম:';
+      selectedEmployeeId.textContent = '';
+    });
+
+    // মাসিক হাজিরা লোড
+    loadMonthBtn.addEventListener('click', loadMonthlyAttendance);
+
+    // এন্ট্রি সংরক্ষণ
+    saveEntryBtn.addEventListener('click', async () => {
+      const date = entryDateInput.value;
+      const status = attendanceStatusSelect.value;
+      const overtime = parseFloat(overtimeInput.value) || 0;
+
+      if (!employeeSelect.value) {
+        alert('কর্মী নির্বাচন করুন।');
+        return;
+      }
+
+      if (!date) {
+        document.getElementById('dateError').textContent = 'তারিখ নির্বাচন করুন।';
+        return;
+      } else {
+        document.getElementById('dateError').textContent = '';
+      }
+
+      if (!status) {
+        document.getElementById('attendanceError').textContent = 'হাজিরা নির্বাচন করুন।';
+        return;
+      } else {
+        document.getElementById('attendanceError').textContent = '';
+      }
+
+      try {
+        await db.collection('employees')
+          .doc(employeeSelect.value)
+          .collection('attendance')
+          .doc(date)
+          .set({
+            date: new Date(date),
+            status: status,
+            overtime: overtime
+          });
+
+        alert('এন্ট্রি সফলভাবে সংরক্ষণ হয়েছে!');
+        loadMonthlyAttendance();
+      } catch (error) {
+        console.error('এন্ট্রি সংরক্ষণে ত্রুটি:', error);
+      }
+    });
+
+    // প্রিন্ট কার্যকলাপ
+    printBtn.addEventListener('click', () => {
+      window.print();
+    });
+
+    // লগআউট বাটন
+    logoutBtn.addEventListener('click', () => {
+      auth.signOut().then(() => {
+        window.location.href = 'login.html';
+      }).catch(error => {
+        console.error('লগআউট ত্রুটি:', error);
+      });
+    });
+  </script>
+</body>
+</html>
