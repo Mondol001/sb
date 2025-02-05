@@ -337,21 +337,21 @@
           </div>
           <hr>
           <!-- Category Management -->
-          <!-- Settings Modal: Category Management Section (সংশোধিত অংশ) -->
-<div class="row g-3">
-  <div class="col-md-8">
-    <label class="form-label">বর্তমান ক্যাটাগরি</label>
-    <ul id="categoryList" class="list-group">
-      <!-- Firebase থেকে লোড হবে -->
-    </ul>
-  </div>
-  <div class="col-md-4">
-    <label for="newCategoryInput" class="form-label">নতুন ক্যাটাগরি</label>
-    <input type="text" id="newCategoryInput" class="form-control" placeholder="নতুন ক্যাটাগরি লিখুন">
-    <button id="addCategoryBtn" class="btn btn-secondary w-100 mt-2">যোগ করুন</button>
-  </div>
-</div>
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">বর্তমান ক্যাটাগরি</label>
+              <ul id="categoryList" class="list-group">
+                <!-- Firebase থেকে লোড হবে -->
+              </ul>
+            </div>
+            <div class="col-md-4">
+              <label for="newCategoryInput" class="form-label">নতুন ক্যাটাগরি</label>
+              <input type="text" id="newCategoryInput" class="form-control" placeholder="নতুন ক্যাটাগরি লিখুন">
+              <button id="addCategoryBtn" class="btn btn-secondary w-100 mt-2">যোগ করুন</button>
+            </div>
+          </div>
 
+        </div>
         <div class="modal-footer">
           <button id="saveSettings" type="button" class="btn btn-primary" data-bs-dismiss="modal">সেভ করুন</button>
         </div>
@@ -432,9 +432,11 @@
     auth.onAuthStateChanged(user => {
       if (user) {
         currentUser = user;
+        console.log("Logged in as:", user.uid);
         loadTransactions();
         loadCategories();
       } else {
+        console.error("ব্যবহারকারী লগ ইন নেই, login.html এ রিডাইরেক্ট করা হচ্ছে");
         window.location = "login.html";
       }
     });
@@ -683,68 +685,82 @@
        Category Management: Load & Add Categories
        =============================== */
     // Default categories (আপনার প্রয়োজনে এগুলোকে পরিবর্তন করতে পারবেন)
-const defaultCategories = [
-  "Food", "Transport", "Entertainment", "Health", "Others",
-  "Utilities", "Shopping", "Education", "Travel", "Savings"
-];
+    const defaultCategories = [
+      "Food", "Transport", "Entertainment", "Health", "Others",
+      "Utilities", "Shopping", "Education", "Travel", "Savings"
+    ];
 
-// Load Categories from Firebase
-function loadCategories() {
-  // Clear current options in transaction forms
-  const categorySelects = [
-    document.getElementById("category"),
-    document.getElementById("editCategory")
-  ];
-  categorySelects.forEach(sel => sel.innerHTML = "");
+    // Load Categories from Firebase
+    function loadCategories() {
+      // Clear current options in transaction forms
+      const categorySelects = [
+        document.getElementById("category"),
+        document.getElementById("editCategory")
+      ];
+      categorySelects.forEach(sel => sel.innerHTML = "");
 
-  // Load categories from Firebase collection "categories" under current user.
-  db.collection("users").doc(currentUser.uid).collection("categories")
-    .orderBy("name")
-    .onSnapshot(snapshot => {
-      // Clear category list in settings modal
-      categoryList.innerHTML = "";
-      if (snapshot.empty) {
-        // যদি কোন ক্যাটাগরি না থাকে, তাহলে ডিফল্ট ১০টি ক্যাটাগরি যোগ করুন
-        defaultCategories.forEach(cat => {
-          addCategoryToFirebase(cat);
+      // Load categories from Firebase collection "categories" under current user.
+      db.collection("users").doc(currentUser.uid).collection("categories")
+        .orderBy("name")
+        .onSnapshot(snapshot => {
+          // Clear category list in settings modal
+          categoryList.innerHTML = "";
+          if (snapshot.empty) {
+            // যদি কোন ক্যাটাগরি না থাকে, তাহলে ডিফল্ট ক্যাটাগরি যোগ করুন
+            defaultCategories.forEach(cat => {
+              addCategoryToFirebase(cat);
+            });
+          } else {
+            snapshot.forEach(doc => {
+              const cat = doc.data().name;
+              // Add option to each select element
+              categorySelects.forEach(sel => {
+                const option = document.createElement("option");
+                option.value = cat;
+                option.textContent = cat;
+                sel.appendChild(option);
+              });
+              // Add to settings category list
+              const li = document.createElement("li");
+              li.className = "list-group-item";
+              li.textContent = cat;
+              categoryList.appendChild(li);
+            });
+          }
         });
+    }
+
+    // Button Click Event to add a new category manually
+    addCategoryBtn.addEventListener("click", () => {
+      const newCat = newCategoryInput.value.trim();
+      console.log("New category input:", newCat);
+      if (newCat) {
+        addCategoryToFirebase(newCat);
+        newCategoryInput.value = "";
       } else {
-        snapshot.forEach(doc => {
-          const cat = doc.data().name;
-          // Add option to each select element
-          categorySelects.forEach(sel => {
-            const option = document.createElement("option");
-            option.value = cat;
-            option.textContent = cat;
-            sel.appendChild(option);
-          });
-          // Add to settings category list
-          const li = document.createElement("li");
-          li.className = "list-group-item";
-          li.textContent = cat;
-          categoryList.appendChild(li);
-        });
+        alert("দয়া করে একটি বৈধ ক্যাটাগরি লিখুন");
       }
     });
-}
 
-// Button Click Event to add a new category manually
-addCategoryBtn.addEventListener("click", () => {
-  const newCat = newCategoryInput.value.trim();
-  if (newCat) {
-    addCategoryToFirebase(newCat);
-    newCategoryInput.value = "";
-  }
-});
-
-// Function to add category to Firebase and show a confirmation message
-function addCategoryToFirebase(catName) {
-  // ক্যাটাগরি Firebase Firestore‑এর "users" / currentUser.uid / "categories" এ সেভ হবে
-  db.collection("users").doc(currentUser.uid).collection("categories")
-    .add({ name: catName })
-    .then(() => alert("ক্যাটাগরি সফলভাবে যোগ করা হয়েছে: " + catName))
-    .catch(error => console.error("Error adding category:", error));
-}
+    // Function to add category to Firebase and show a confirmation message
+    function addCategoryToFirebase(catName) {
+      if (!currentUser) {
+        console.error("currentUser is null. ব্যবহারকারী লগ ইন করেননি!");
+        alert("ব্যবহারকারী লগ ইন করা নেই। অনুগ্রহ করে লগ ইন করুন।");
+        return;
+      }
+      
+      console.log("Adding category for user:", currentUser.uid, "Category:", catName);
+      db.collection("users").doc(currentUser.uid).collection("categories")
+        .add({ name: catName })
+        .then(() => {
+          alert("ক্যাটাগরি সফলভাবে যোগ করা হয়েছে: " + catName);
+        })
+        .catch(error => {
+          console.error("Error adding category:", error);
+          alert("ক্যাটাগরি যোগ করতে গিয়ে সমস্যা হয়েছে: " + error.message);
+        });
+    }
   </script>
 </body>
 </html>
