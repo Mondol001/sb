@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>সাইন আপ - Expense Tracker</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* বেসিক এবং উন্নত CSS styling */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #74ABE2, #5563DE);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .signup-container {
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: 8px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 400px;
+      animation: fadeIn 1s ease-in-out;
+      position: relative;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .signup-container h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+    .signup-container form label {
+      display: block;
+      margin-top: 15px;
+      color: #555;
+    }
+    .signup-container form input {
+      width: 100%;
+      padding: 12px 10px;
+      margin-top: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      transition: border-color 0.3s;
+      font-size: 14px;
+    }
+    .signup-container form input:focus {
+      border-color: #5563DE;
+      outline: none;
+    }
+    .password-container {
+      position: relative;
+    }
+    .toggle-password {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #5563DE;
+      font-size: 14px;
+    }
+    .signup-container form button {
+      width: 100%;
+      padding: 12px;
+      background-color: #5563DE;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 25px;
+      transition: background-color 0.3s;
+    }
+    .signup-container form button:hover {
+      background-color: #3d47b3;
+    }
+    .error-message {
+      color: #D8000C;
+      background: #FFBABA;
+      padding: 8px;
+      margin-top: 15px;
+      border-radius: 4px;
+      text-align: center;
+      display: none;
+      font-size: 14px;
+    }
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    .login-link a {
+      color: #5563DE;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+    /* লোডার স্টাইল */
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #5563DE;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <div class="signup-container">
+    <div class="loader" id="loader"></div>
+    <h2>সাইন আপ করুন</h2>
+    <form id="signupForm">
+      <label for="name">নাম:</label>
+      <input type="text" id="name" placeholder="আপনার নাম লিখুন" required>
+
+      <label for="email">ইমেইল:</label>
+      <input type="email" id="email" placeholder="আপনার ইমেইল লিখুন" required>
+
+      <label for="password">পাসওয়ার্ড:</label>
+      <div class="password-container">
+        <input type="password" id="password" placeholder="পাসওয়ার্ড লিখুন" required>
+        <span class="toggle-password" id="togglePassword">দেখান</span>
+      </div>
+
+      <button type="submit">সাইন আপ</button>
+      <div class="error-message" id="error-message"></div>
+    </form>
+    <div class="login-link">
+      <p>অ্যাকাউন্ট আছে? <a href="login.html">লগইন করুন</a></p>
+    </div>
+  </div>
+
+  <script>
+    // Firebase Configuration (আপনার প্রকল্পের কনফিগারেশন এখানে বসান)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
+      authDomain: "my-app-a5b52.firebaseapp.com",
+      projectId: "my-app-a5b52",
+      storageBucket: "my-app-a5b52.firebasestorage.app",
+      messagingSenderId: "213828908146",
+      appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
+      measurementId: "G-RX02N4FEEH"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Get DOM Elements
+    const signupForm = document.getElementById("signupForm");
+    const errorMessageEl = document.getElementById("error-message");
+    const loader = document.getElementById("loader");
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+
+    // পাসওয়ার্ড দেখান/লুকান ফিচার
+    togglePassword.addEventListener("click", () => {
+      const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+      togglePassword.textContent = type === "password" ? "দেখান" : "লুকান";
+    });
+
+    // Signup Form Submission Event
+    signupForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      errorMessageEl.style.display = "none";
+      loader.style.display = "block";
+
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      // Firebase Authentication: Create user with email and password
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          // নতুন ব্যবহারকারী তৈরি হলে, তাদের Firestore ডকুমেন্ট তৈরি করুন এবং default role "user" সেট করুন
+          return db.collection("users").doc(user.uid).set({
+            name: name,
+            email: email,
+            role: "user"  // Default role "user"
+          });
+        })
+        .then(() => {
+          // সাইনআপ সফল হলে, index.html বা অন্য কোনো পেজে রিডাইরেক্ট করুন
+          window.location = "index.html";
+        })
+        .catch((error) => {
+          console.error("Signup Error: ", error);
+          errorMessageEl.textContent = error.message;
+          errorMessageEl.style.display = "block";
+        })
+        .finally(() => {
+          loader.style.display = "none";
+        });
+    });
+  </script>
+</body>
+</html>
