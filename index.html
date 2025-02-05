@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>উন্নত ডেইলি এক্সপেন্স ট্র্যাকার</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase SDKs (compat version) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  
+  <style>
+    /* Custom CSS */
+    body {
+      background-color: #f8f9fa;
+      transition: background-color 0.3s ease;
+    }
+    .dark-mode {
+      background-color: #343a40;
+      color: #f8f9fa;
+    }
+    .dark-mode .card {
+      background-color: #495057;
+      color: #f8f9fa;
+    }
+    .dark-mode .table {
+      color: #f8f9fa;
+    }
+    .btn-outline-light:hover, .btn-outline-light:focus {
+      background-color: #ffffff;
+      color: #000;
+    }
+    table th, table td {
+      vertical-align: middle;
+    }
+    .card-header {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Expense Tracker</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
+        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <!-- Settings & Logout -->
+          <li class="nav-item">
+            <button id="settingsBtn" class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#settingsModal">সেটিংস</button>
+          </li>
+          <li class="nav-item">
+            <button id="logoutBtn" class="btn btn-outline-light">লগ আউট</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <div class="container my-4">
+    <div class="row">
+      <!-- Transaction Form -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">নতুন লেনদেন যুক্ত করুন</h5>
+          </div>
+          <div class="card-body">
+            <form id="transactionForm">
+              <div class="mb-3">
+                <label for="type" class="form-label">ধরন</label>
+                <select id="type" class="form-select" required>
+                  <option value="income">ইনকাম</option>
+                  <option value="expense">এক্সপেন্স</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="amount" class="form-label">পরিমাণ</label>
+                <input type="number" id="amount" class="form-control" placeholder="টাকার পরিমাণ" required>
+              </div>
+              <div class="mb-3">
+                <label for="date" class="form-label">তারিখ</label>
+                <input type="date" id="date" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label for="description" class="form-label">বিবরণ</label>
+                <input type="text" id="description" class="form-control" placeholder="বিবরণ লিখুন">
+              </div>
+              <div class="mb-3">
+                <label for="category" class="form-label">ক্যাটাগরি</label>
+                <select id="category" class="form-select" required>
+                  <option value="Food">খাদ্য</option>
+                  <option value="Transport">পরিবহন</option>
+                  <option value="Entertainment">বিনোদন</option>
+                  <option value="Health">স্বাস্থ্য</option>
+                  <option value="Others">অন্যান্য</option>
+                </select>
+              </div>
+              <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="recurring">
+                <label class="form-check-label" for="recurring">Recurring Transaction?</label>
+              </div>
+              <div class="mb-3" id="recurringOptions" style="display:none;">
+                <label for="recurringInterval" class="form-label">Recurring Interval</label>
+                <select id="recurringInterval" class="form-select">
+                  <option value="daily">দৈনিক</option>
+                  <option value="weekly">সাপ্তাহিক</option>
+                  <option value="monthly">মাসিক</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-success w-100">যোগ করুন</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transaction List & Summary -->
+      <div class="col-lg-8">
+        <!-- Summary Cards -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <div class="card text-bg-light shadow-sm">
+              <div class="card-body">
+                <h6 class="card-subtitle">মোট ইনকাম</h6>
+                <h4 id="totalIncome">0</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card text-bg-light shadow-sm">
+              <div class="card-body">
+                <h6 class="card-subtitle">মোট এক্সপেন্স</h6>
+                <h4 id="totalExpense">0</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card text-bg-light shadow-sm">
+              <div class="card-body">
+                <h6 class="card-subtitle">ব্যালেন্স (<span id="currencySymbol">$</span>)</h6>
+                <h4 id="balance">0</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction Table -->
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">লেনদেনের তালিকা</h5>
+          </div>
+          <div class="card-body table-responsive">
+            <table class="table table-striped" id="transactionTable">
+              <thead>
+                <tr>
+                  <th>ধরন</th>
+                  <th>পরিমাণ</th>
+                  <th>তারিখ</th>
+                  <th>বিবরণ</th>
+                  <th>ক্যাটাগরি</th>
+                  <th>অপশন</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Firestore থেকে ডায়নামিক ডাটা লোড হবে -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Export Button -->
+        <div class="d-flex justify-content-end mb-3">
+          <button id="exportBtn" class="btn btn-outline-primary">এক্সপোর্ট করুন (CSV)</button>
+        </div>
+
+        <!-- Reporting Chart -->
+        <div class="card shadow-sm">
+          <div class="card-header bg-secondary text-white">
+            <h5 class="card-title mb-0">ক্যাটাগরি অনুযায়ী ব্যয় চার্ট</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="expenseChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="settingsModalLabel">সেটিংস</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="currencySelect" class="form-label">কারেন্সি সিলেক্ট করুন</label>
+            <select id="currencySelect" class="form-select">
+              <option value="$">$ - USD</option>
+              <option value="€">€ - EUR</option>
+              <option value="£">£ - GBP</option>
+              <option value="৳">৳ - BDT</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">থিম পরিবর্তন</label>
+            <button id="themeToggle" class="btn btn-outline-secondary w-100">ডার্ক/লাইট</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="saveSettings" type="button" class="btn btn-primary" data-bs-dismiss="modal">সেভ করুন</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS Bundle (includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    /* script.js */
+
+    // ===== Firebase Initialization =====
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
+  authDomain: "my-app-a5b52.firebaseapp.com",
+  projectId: "my-app-a5b52",
+  storageBucket: "my-app-a5b52.firebasestorage.app",
+  messagingSenderId: "213828908146",
+  appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
+  measurementId: "G-RX02N4FEEH"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ===== DOM Elements =====
+    const transactionForm = document.getElementById("transactionForm");
+    const transactionTableBody = document.querySelector("#transactionTable tbody");
+    const totalIncomeEl = document.getElementById("totalIncome");
+    const totalExpenseEl = document.getElementById("totalExpense");
+    const balanceEl = document.getElementById("balance");
+    const currencySymbolEl = document.getElementById("currencySymbol");
+    const exportBtn = document.getElementById("exportBtn");
+    const currencySelect = document.getElementById("currencySelect");
+    const themeToggle = document.getElementById("themeToggle");
+
+    // Chart variable
+    let chartInstance = null;
+
+    // Global variables
+    let currentCurrency = "$";
+    let currentUser = null;
+
+    // ===== Authentication Observer =====
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUser = user;
+        loadTransactions();
+      } else {
+        // যদি ইউজার লগইন না থাকে, login.html এ রিডাইরেক্ট করুন
+        window.location = "login.html";
+      }
+    });
+
+    // ===== Logout Event =====
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      auth.signOut()
+        .then(() => {
+          window.location = "login.html";
+        })
+        .catch(error => console.error("Logout error:", error));
+    });
+
+    // ===== Recurring Options Toggle =====
+    document.getElementById("recurring").addEventListener("change", (e) => {
+      document.getElementById("recurringOptions").style.display = e.target.checked ? "block" : "none";
+    });
+
+    // ===== Add Transaction =====
+    transactionForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const type = document.getElementById("type").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      const date = document.getElementById("date").value;
+      const description = document.getElementById("description").value;
+      const category = document.getElementById("category").value;
+      const recurring = document.getElementById("recurring").checked;
+      const recurringInterval = recurring ? document.getElementById("recurringInterval").value : "";
+
+      const newTx = {
+        type,
+        amount,
+        date,
+        description,
+        category,
+        recurring,
+        recurringInterval,
+        currency: currentCurrency,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      db.collection("users").doc(currentUser.uid).collection("transactions")
+        .add(newTx)
+        .then(() => {
+          transactionForm.reset();
+          document.getElementById("recurringOptions").style.display = "none";
+        })
+        .catch(error => console.error("Error adding transaction:", error));
+    });
+
+    // ===== Load Transactions from Firestore =====
+    function loadTransactions() {
+      db.collection("users").doc(currentUser.uid).collection("transactions")
+        .orderBy("date", "desc")
+        .onSnapshot(snapshot => {
+          transactionTableBody.innerHTML = "";
+          let totalIncome = 0, totalExpense = 0;
+          const txData = [];
+
+          snapshot.forEach(doc => {
+            const tx = doc.data();
+            tx.id = doc.id;
+            txData.push(tx);
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${tx.type === "income" ? "ইনকাম" : "এক্সপেন্স"}</td>
+              <td>${tx.amount} ${tx.currency}</td>
+              <td>${tx.date}</td>
+              <td>${tx.description}</td>
+              <td>${tx.category}</td>
+              <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteTransaction('${tx.id}')">ডিলিট</button>
+              </td>
+            `;
+            transactionTableBody.appendChild(tr);
+
+            if (tx.type === "income") {
+              totalIncome += tx.amount;
+            } else {
+              totalExpense += tx.amount;
+            }
+          });
+
+          totalIncomeEl.textContent = totalIncome;
+          totalExpenseEl.textContent = totalExpense;
+          balanceEl.textContent = totalIncome - totalExpense;
+          currencySymbolEl.textContent = currentCurrency;
+
+          renderChart(txData);
+        });
+    }
+
+    // ===== Delete Transaction =====
+    function deleteTransaction(id) {
+      db.collection("users").doc(currentUser.uid).collection("transactions").doc(id).delete()
+        .then(() => console.log("Transaction deleted"))
+        .catch(error => console.error("Error deleting transaction:", error));
+    }
+
+    // ===== Export Transactions as CSV =====
+    exportBtn.addEventListener("click", () => {
+      db.collection("users").doc(currentUser.uid).collection("transactions").get()
+        .then(snapshot => {
+          let csvContent = "data:text/csv;charset=utf-8,";
+          csvContent += "Type,Amount,Date,Description,Category,Currency,Recurring,RecurringInterval\r\n";
+          snapshot.forEach(doc => {
+            const tx = doc.data();
+            csvContent += `${tx.type},${tx.amount},${tx.date},${tx.description},${tx.category},${tx.currency},${tx.recurring},${tx.recurringInterval}\r\n`;
+          });
+          const encodedUri = encodeURI(csvContent);
+          const link = document.createElement("a");
+          link.setAttribute("href", encodedUri);
+          link.setAttribute("download", "transactions.csv");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        })
+        .catch(error => console.error("Error exporting transactions:", error));
+    });
+
+    // ===== Render Chart using Chart.js =====
+    function renderChart(transactions) {
+      const categoryTotals = {};
+      transactions.forEach(tx => {
+        if (tx.type === "expense") {
+          categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
+        }
+      });
+
+      const ctx = document.getElementById("expenseChart").getContext("2d");
+      const data = {
+        labels: Object.keys(categoryTotals),
+        datasets: [{
+          label: 'ব্যয়',
+          data: Object.values(categoryTotals),
+          backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff']
+        }]
+      };
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: data
+      });
+    }
+
+    // ===== Settings Modal: Save Settings =====
+    document.getElementById("saveSettings").addEventListener("click", () => {
+      currentCurrency = currencySelect.value;
+      currencySymbolEl.textContent = currentCurrency;
+    });
+
+    // ===== Theme Toggle =====
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+    });
+  </script>
+</body>
+</html>
