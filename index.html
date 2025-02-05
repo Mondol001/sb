@@ -465,7 +465,8 @@
        =============================== */
     transactionForm.addEventListener("submit", (e) => {
       e.preventDefault();
-
+      
+      // পড়ে নিন ইনপুট ফিল্ড থেকে ডাটা
       const type = document.getElementById("type").value;
       const amount = parseFloat(document.getElementById("amount").value);
       const date = document.getElementById("date").value;
@@ -473,7 +474,16 @@
       const category = document.getElementById("category").value;
       const recurring = document.getElementById("recurring").checked;
       const recurringInterval = recurring ? document.getElementById("recurringInterval").value : "";
-
+      
+      // ডিবাগ লগ দেখুন
+      console.log("New Transaction Details:", { type, amount, date, description, category, recurring, recurringInterval });
+      
+      // যাচাই করুন যে ইনপুট গুলো সঠিক আছে কিনা
+      if (!type || !amount || !date || !category) {
+        alert("অনুগ্রহ করে সব প্রয়োজনীয় ফিল্ড পূরণ করুন");
+        return;
+      }
+      
       const newTx = {
         type,
         amount,
@@ -485,20 +495,23 @@
         currency: currentCurrency,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
-
+      
       db.collection("users").doc(currentUser.uid).collection("transactions")
         .add(newTx)
         .then(() => {
+          console.log("লেনদেন সফলভাবে যোগ করা হয়েছে");
           transactionForm.reset();
           document.getElementById("recurringOptions").style.display = "none";
         })
-        .catch(error => console.error("Error adding transaction:", error));
+        .catch(error => {
+          console.error("Error adding transaction:", error);
+          alert("লেনদেন যোগ করতে গিয়ে সমস্যা হয়েছে: " + error.message);
+        });
     });
 
     /* ===============================
        Edit Transaction
        =============================== */
-    // Open Edit Modal and pre-fill data
     function openEditModal(txId) {
       db.collection("users").doc(currentUser.uid).collection("transactions").doc(txId).get()
         .then(doc => {
@@ -521,7 +534,6 @@
         .catch(error => console.error("Error loading transaction:", error));
     }
 
-    // Handle edit form submit
     editTransactionForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const txId = editTxId.value;
@@ -676,7 +688,6 @@
        Update Theme Function
        =============================== */
     function updateTheme(theme) {
-      // Remove all theme classes from body then add selected
       document.body.classList.remove("theme-light", "theme-dark", "theme-blue", "theme-highcontrast");
       document.body.classList.add("theme-" + theme);
     }
@@ -684,43 +695,35 @@
     /* ===============================
        Category Management: Load & Add Categories
        =============================== */
-    // Default categories (আপনার প্রয়োজনে এগুলোকে পরিবর্তন করতে পারবেন)
     const defaultCategories = [
       "Food", "Transport", "Entertainment", "Health", "Others",
       "Utilities", "Shopping", "Education", "Travel", "Savings"
     ];
 
-    // Load Categories from Firebase
     function loadCategories() {
-      // Clear current options in transaction forms
       const categorySelects = [
         document.getElementById("category"),
         document.getElementById("editCategory")
       ];
       categorySelects.forEach(sel => sel.innerHTML = "");
 
-      // Load categories from Firebase collection "categories" under current user.
       db.collection("users").doc(currentUser.uid).collection("categories")
         .orderBy("name")
         .onSnapshot(snapshot => {
-          // Clear category list in settings modal
           categoryList.innerHTML = "";
           if (snapshot.empty) {
-            // যদি কোন ক্যাটাগরি না থাকে, তাহলে ডিফল্ট ক্যাটাগরি যোগ করুন
             defaultCategories.forEach(cat => {
               addCategoryToFirebase(cat);
             });
           } else {
             snapshot.forEach(doc => {
               const cat = doc.data().name;
-              // Add option to each select element
               categorySelects.forEach(sel => {
                 const option = document.createElement("option");
                 option.value = cat;
                 option.textContent = cat;
                 sel.appendChild(option);
               });
-              // Add to settings category list
               const li = document.createElement("li");
               li.className = "list-group-item";
               li.textContent = cat;
@@ -730,7 +733,6 @@
         });
     }
 
-    // Button Click Event to add a new category manually
     addCategoryBtn.addEventListener("click", () => {
       const newCat = newCategoryInput.value.trim();
       console.log("New category input:", newCat);
@@ -742,7 +744,6 @@
       }
     });
 
-    // Function to add category to Firebase and show a confirmation message
     function addCategoryToFirebase(catName) {
       if (!currentUser) {
         console.error("currentUser is null. ব্যবহারকারী লগ ইন করেননি!");
