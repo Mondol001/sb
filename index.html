@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>উন্নত ডেইলি এক্সপেন্স ট্র্যাকার</title>
+  <title>উন্নত ডেইলি এক্সপেন্স ট্র্যাকার (Firebase Roles সহ)</title>
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Chart.js -->
@@ -144,7 +144,7 @@
               <div class="mb-3">
                 <label for="category" class="form-label">ক্যাটাগরি</label>
                 <select id="category" class="form-select" required>
-                  <!-- ক্যাটাগরি লোড হবে Firebase থেকে -->
+                  <!-- ক্যাটাগরি লোড হবে Firestore থেকে -->
                 </select>
               </div>
               <div class="form-check mb-3">
@@ -341,7 +341,7 @@
             <div class="col-md-8">
               <label class="form-label">বর্তমান ক্যাটাগরি</label>
               <ul id="categoryList" class="list-group">
-                <!-- Firebase থেকে লোড হবে -->
+                <!-- Firestore থেকে লোড হবে -->
               </ul>
             </div>
             <div class="col-md-4">
@@ -350,7 +350,6 @@
               <button id="addCategoryBtn" class="btn btn-secondary w-100 mt-2">যোগ করুন</button>
             </div>
           </div>
-
         </div>
         <div class="modal-footer">
           <button id="saveSettings" type="button" class="btn btn-primary" data-bs-dismiss="modal">সেভ করুন</button>
@@ -367,13 +366,13 @@
        Firebase & App Initialization
        =============================== */
     const firebaseConfig = {
-      apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
-      authDomain: "my-app-a5b52.firebaseapp.com",
-      projectId: "my-app-a5b52",
-      storageBucket: "my-app-a5b52.firebasestorage.app",
-      messagingSenderId: "213828908146",
-      appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
-      measurementId: "G-RX02N4FEEH"
+      apiKey: "YOUR_API_KEY_HERE",
+      authDomain: "YOUR_AUTH_DOMAIN_HERE",
+      projectId: "YOUR_PROJECT_ID_HERE",
+      storageBucket: "YOUR_STORAGE_BUCKET_HERE",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
+      appId: "YOUR_APP_ID_HERE",
+      measurementId: "YOUR_MEASUREMENT_ID_HERE"
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -433,6 +432,19 @@
       if (user) {
         currentUser = user;
         console.log("Logged in as:", user.uid);
+        // নিশ্চিত করুন যে ব্যবহারকারীর ডকুমেন্টে role ফিল্ড আছে। উদাহরণস্বরূপ,
+        // যদি নতুন ব্যবহারকারী হয়, তাহলে তার ডকুমেন্টে default role "user" সেট করুন।
+        db.collection("users").doc(user.uid).get()
+          .then(doc => {
+            if (!doc.exists) {
+              // নতুন ব্যবহারকারী হলে তার ডকুমেন্ট তৈরি করুন এবং default role "user" দিন
+              db.collection("users").doc(user.uid).set({
+                role: "user",
+                email: user.email || ""
+              });
+            }
+          })
+          .catch(error => console.error("Error checking user document:", error));
         loadTransactions();
         loadCategories();
       } else {
@@ -466,7 +478,7 @@
     transactionForm.addEventListener("submit", (e) => {
       e.preventDefault();
       
-      // পড়ে নিন ইনপুট ফিল্ড থেকে ডাটা
+      // ইনপুট ফিল্ড থেকে ডাটা সংগ্রহ
       const type = document.getElementById("type").value;
       const amount = parseFloat(document.getElementById("amount").value);
       const date = document.getElementById("date").value;
@@ -475,10 +487,8 @@
       const recurring = document.getElementById("recurring").checked;
       const recurringInterval = recurring ? document.getElementById("recurringInterval").value : "";
       
-      // ডিবাগ লগ দেখুন
       console.log("New Transaction Details:", { type, amount, date, description, category, recurring, recurringInterval });
       
-      // যাচাই করুন যে ইনপুট গুলো সঠিক আছে কিনা
       if (!type || !amount || !date || !category) {
         alert("অনুগ্রহ করে সব প্রয়োজনীয় ফিল্ড পূরণ করুন");
         return;
@@ -496,6 +506,7 @@
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
       
+      // শুধুমাত্র ব্যবহারকারীর নিজস্ব ডেটা সংরক্ষণের জন্য "users/{uid}/transactions" পাথে সংরক্ষণ
       db.collection("users").doc(currentUser.uid).collection("transactions")
         .add(newTx)
         .then(() => {
@@ -565,12 +576,10 @@
           transactionTableBody.innerHTML = "";
           let totalIncome = 0, totalExpense = 0;
           const txData = [];
-
           snapshot.forEach(doc => {
             const tx = doc.data();
             tx.id = doc.id;
             txData.push(tx);
-
             const tr = document.createElement("tr");
             tr.innerHTML = `
               <td>${tx.type === "income" ? "ইনকাম" : "এক্সপেন্স"}</td>
@@ -584,19 +593,16 @@
               </td>
             `;
             transactionTableBody.appendChild(tr);
-
             if (tx.type === "income") {
               totalIncome += tx.amount;
             } else {
               totalExpense += tx.amount;
             }
           });
-
           totalIncomeEl.textContent = totalIncome;
           totalExpenseEl.textContent = totalExpense;
           balanceEl.textContent = totalIncome - totalExpense;
           currencySymbolEl.textContent = currentCurrency;
-
           renderChart(txData);
         });
     }
@@ -645,7 +651,6 @@
           categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
         }
       });
-
       const ctx = document.getElementById("expenseChart").getContext("2d");
       const data = {
         labels: Object.keys(categoryTotals),
@@ -655,11 +660,9 @@
           backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff']
         }]
       };
-
       if (chartInstance) {
         chartInstance.destroy();
       }
-
       chartInstance = new Chart(ctx, {
         type: 'pie',
         data: data
@@ -673,11 +676,9 @@
       currentCurrency = currencySelect.value;
       localStorage.setItem("currency", currentCurrency);
       currencySymbolEl.textContent = currentCurrency;
-
       currentBudget = budgetInput.value || 0;
       localStorage.setItem("budget", currentBudget);
       totalBudgetEl.textContent = currentBudget;
-
       currentTheme = themeSelect.value;
       localStorage.setItem("theme", currentTheme);
       updateTheme(currentTheme);
@@ -706,7 +707,6 @@
         document.getElementById("editCategory")
       ];
       categorySelects.forEach(sel => sel.innerHTML = "");
-
       db.collection("users").doc(currentUser.uid).collection("categories")
         .orderBy("name")
         .onSnapshot(snapshot => {
@@ -750,7 +750,6 @@
         alert("ব্যবহারকারী লগ ইন করা নেই। অনুগ্রহ করে লগ ইন করুন।");
         return;
       }
-      
       console.log("Adding category for user:", currentUser.uid, "Category:", catName);
       db.collection("users").doc(currentUser.uid).collection("categories")
         .add({ name: catName })
