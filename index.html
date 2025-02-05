@@ -14,37 +14,83 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   
   <style>
-    /* Custom CSS */
+    /* Global Styles & Transitions */
     body {
-      background-color: #f8f9fa;
-      transition: background-color 0.3s ease;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
-    .dark-mode {
-      background-color: #343a40;
-      color: #f8f9fa;
+    /* 4 Themes */
+    body.theme-light {
+      background: #f8f9fa;
+      color: #333;
     }
-    .dark-mode .card {
-      background-color: #495057;
-      color: #f8f9fa;
+    body.theme-dark {
+      background: #222;
+      color: #ddd;
     }
-    .dark-mode .table {
-      color: #f8f9fa;
+    body.theme-blue {
+      background: #e7f0fd;
+      color: #0a1f44;
     }
+    body.theme-highcontrast {
+      background: #000;
+      color: #fff;
+    }
+    
+    /* Glassmorphism Card Style */
+    .card {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+    body.theme-dark .card,
+    body.theme-highcontrast .card {
+      background: rgba(0, 0, 0, 0.6);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+    }
+    
+    /* Navbar */
+    .navbar {
+      background-color: rgba(0, 123, 255, 0.85) !important;
+      backdrop-filter: blur(10px);
+    }
+    
+    /* Table Styling */
+    .table-striped tbody tr:nth-of-type(odd) {
+      background-color: rgba(255,255,255,0.3);
+    }
+    body.theme-dark .table-striped tbody tr:nth-of-type(odd),
+    body.theme-highcontrast .table-striped tbody tr:nth-of-type(odd) {
+      background-color: rgba(0,0,0,0.3);
+    }
+    
+    /* Custom Buttons */
     .btn-outline-light:hover, .btn-outline-light:focus {
-      background-color: #ffffff;
+      background-color: #fff;
       color: #000;
     }
-    table th, table td {
-      vertical-align: middle;
-    }
+    
+    /* Card Header */
     .card-header {
       font-weight: bold;
+      background: rgba(0,0,0,0.1);
+      backdrop-filter: blur(5px);
+    }
+    
+    /* Glass Container for Modals */
+    .glass-container {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
     }
   </style>
 </head>
-<body>
+<body class="theme-light">
   <!-- Navigation Bar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">Expense Tracker</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
@@ -67,7 +113,7 @@
 
   <!-- Main Container -->
   <div class="container my-4">
-    <div class="row">
+    <div class="row g-4">
       <!-- Transaction Form -->
       <div class="col-lg-4">
         <div class="card shadow-sm">
@@ -98,11 +144,7 @@
               <div class="mb-3">
                 <label for="category" class="form-label">ক্যাটাগরি</label>
                 <select id="category" class="form-select" required>
-                  <option value="Food">খাদ্য</option>
-                  <option value="Transport">পরিবহন</option>
-                  <option value="Entertainment">বিনোদন</option>
-                  <option value="Health">স্বাস্থ্য</option>
-                  <option value="Others">অন্যান্য</option>
+                  <!-- ক্যাটাগরি লোড হবে Firebase থেকে -->
                 </select>
               </div>
               <div class="form-check mb-3">
@@ -127,7 +169,7 @@
       <div class="col-lg-8">
         <!-- Summary Cards -->
         <div class="row mb-3">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="card text-bg-light shadow-sm">
               <div class="card-body">
                 <h6 class="card-subtitle">মোট ইনকাম</h6>
@@ -135,7 +177,7 @@
               </div>
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="card text-bg-light shadow-sm">
               <div class="card-body">
                 <h6 class="card-subtitle">মোট এক্সপেন্স</h6>
@@ -143,11 +185,19 @@
               </div>
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="card text-bg-light shadow-sm">
               <div class="card-body">
                 <h6 class="card-subtitle">ব্যালেন্স (<span id="currencySymbol">$</span>)</h6>
                 <h4 id="balance">0</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-bg-light shadow-sm">
+              <div class="card-body">
+                <h6 class="card-subtitle">মোট বাজেট</h6>
+                <h4 id="totalBudget">0</h4>
               </div>
             </div>
           </div>
@@ -195,27 +245,110 @@
     </div>
   </div>
 
+  <!-- Edit Transaction Modal -->
+  <div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content glass-container">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editTransactionModalLabel">লেনদেন সম্পাদনা করুন</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editTransactionForm">
+            <input type="hidden" id="editTxId">
+            <div class="mb-3">
+              <label for="editType" class="form-label">ধরন</label>
+              <select id="editType" class="form-select" required>
+                <option value="income">ইনকাম</option>
+                <option value="expense">এক্সপেন্স</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="editAmount" class="form-label">পরিমাণ</label>
+              <input type="number" id="editAmount" class="form-control" placeholder="টাকার পরিমাণ" required>
+            </div>
+            <div class="mb-3">
+              <label for="editDate" class="form-label">তারিখ</label>
+              <input type="date" id="editDate" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="editDescription" class="form-label">বিবরণ</label>
+              <input type="text" id="editDescription" class="form-control" placeholder="বিবরণ লিখুন">
+            </div>
+            <div class="mb-3">
+              <label for="editCategory" class="form-label">ক্যাটাগরি</label>
+              <select id="editCategory" class="form-select" required>
+                <!-- ক্যাটাগরি লোড হবে -->
+              </select>
+            </div>
+            <div class="form-check mb-3">
+              <input type="checkbox" class="form-check-input" id="editRecurring">
+              <label class="form-check-label" for="editRecurring">Recurring Transaction?</label>
+            </div>
+            <div class="mb-3" id="editRecurringOptions" style="display:none;">
+              <label for="editRecurringInterval" class="form-label">Recurring Interval</label>
+              <select id="editRecurringInterval" class="form-select">
+                <option value="daily">দৈনিক</option>
+                <option value="weekly">সাপ্তাহিক</option>
+                <option value="monthly">মাসিক</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">আপডেট করুন</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Settings Modal -->
   <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content glass-container">
         <div class="modal-header">
           <h5 class="modal-title" id="settingsModalLabel">সেটিংস</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3">
-            <label for="currencySelect" class="form-label">কারেন্সি সিলেক্ট করুন</label>
-            <select id="currencySelect" class="form-select">
-              <option value="$">$ - USD</option>
-              <option value="€">€ - EUR</option>
-              <option value="£">£ - GBP</option>
-              <option value="৳">৳ - BDT</option>
-            </select>
+          <div class="row g-3">
+            <!-- Currency & Budget Settings -->
+            <div class="col-md-4">
+              <label for="currencySelect" class="form-label">কারেন্সি সিলেক্ট করুন</label>
+              <select id="currencySelect" class="form-select">
+                <option value="$">$ - USD</option>
+                <option value="€">€ - EUR</option>
+                <option value="£">£ - GBP</option>
+                <option value="৳">৳ - BDT</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="budgetInput" class="form-label">মোট বাজেট</label>
+              <input type="number" id="budgetInput" class="form-control" placeholder="আপনার বাজেট লিখুন">
+            </div>
+            <!-- Theme Settings -->
+            <div class="col-md-4">
+              <label for="themeSelect" class="form-label">থিম নির্বাচন করুন</label>
+              <select id="themeSelect" class="form-select">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="blue">Blue</option>
+                <option value="highcontrast">High Contrast</option>
+              </select>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">থিম পরিবর্তন</label>
-            <button id="themeToggle" class="btn btn-outline-secondary w-100">ডার্ক/লাইট</button>
+          <hr>
+          <!-- Category Management -->
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">বর্তমান ক্যাটাগরি</label>
+              <ul id="categoryList" class="list-group">
+                <!-- Firebase থেকে লোড হবে -->
+              </ul>
+            </div>
+            <div class="col-md-4">
+              <label for="newCategoryInput" class="form-label">নতুন ক্যাটাগরি</label>
+              <input type="text" id="newCategoryInput" class="form-control" placeholder="নতুন ক্যাটাগরি লিখুন">
+              <button id="addCategoryBtn" class="btn btn-secondary w-100 mt-2">যোগ করুন</button>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -229,68 +362,104 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
   <script>
-    /* script.js */
-
-    // ===== Firebase Initialization =====
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
-  authDomain: "my-app-a5b52.firebaseapp.com",
-  projectId: "my-app-a5b52",
-  storageBucket: "my-app-a5b52.firebasestorage.app",
-  messagingSenderId: "213828908146",
-  appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
-  measurementId: "G-RX02N4FEEH"
-};
-
+    /* ===============================
+       Firebase & App Initialization
+       =============================== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
+      authDomain: "my-app-a5b52.firebaseapp.com",
+      projectId: "my-app-a5b52",
+      storageBucket: "my-app-a5b52.firebasestorage.app",
+      messagingSenderId: "213828908146",
+      appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
+      measurementId: "G-RX02N4FEEH"
+    };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ===== DOM Elements =====
+    /* ===============================
+       Global Variables & DOM Elements
+       =============================== */
     const transactionForm = document.getElementById("transactionForm");
     const transactionTableBody = document.querySelector("#transactionTable tbody");
     const totalIncomeEl = document.getElementById("totalIncome");
     const totalExpenseEl = document.getElementById("totalExpense");
     const balanceEl = document.getElementById("balance");
     const currencySymbolEl = document.getElementById("currencySymbol");
+    const totalBudgetEl = document.getElementById("totalBudget");
     const exportBtn = document.getElementById("exportBtn");
+    
+    // Settings DOM elements
     const currencySelect = document.getElementById("currencySelect");
-    const themeToggle = document.getElementById("themeToggle");
+    const budgetInput = document.getElementById("budgetInput");
+    const themeSelect = document.getElementById("themeSelect");
+    const newCategoryInput = document.getElementById("newCategoryInput");
+    const addCategoryBtn = document.getElementById("addCategoryBtn");
+    const categoryList = document.getElementById("categoryList");
+    
+    // Edit Transaction Modal Elements
+    const editTransactionModal = new bootstrap.Modal(document.getElementById("editTransactionModal"));
+    const editTransactionForm = document.getElementById("editTransactionForm");
+    const editTxId = document.getElementById("editTxId");
+    const editType = document.getElementById("editType");
+    const editAmount = document.getElementById("editAmount");
+    const editDate = document.getElementById("editDate");
+    const editDescription = document.getElementById("editDescription");
+    const editCategory = document.getElementById("editCategory");
+    const editRecurring = document.getElementById("editRecurring");
+    const editRecurringOptions = document.getElementById("editRecurringOptions");
+    const editRecurringInterval = document.getElementById("editRecurringInterval");
 
-    // Chart variable
     let chartInstance = null;
-
-    // Global variables
-    let currentCurrency = "$";
+    let currentCurrency = localStorage.getItem("currency") || "$";
+    let currentBudget = localStorage.getItem("budget") || 0;
+    let currentTheme = localStorage.getItem("theme") || "light";
     let currentUser = null;
+    
+    // Set saved settings in UI
+    currencySelect.value = currentCurrency;
+    budgetInput.value = currentBudget;
+    themeSelect.value = currentTheme;
+    totalBudgetEl.textContent = currentBudget;
+    currencySymbolEl.textContent = currentCurrency;
+    updateTheme(currentTheme);
 
-    // ===== Authentication Observer =====
+    /* ===============================
+       Authentication Observer
+       =============================== */
     auth.onAuthStateChanged(user => {
       if (user) {
         currentUser = user;
         loadTransactions();
+        loadCategories();
       } else {
-        // যদি ইউজার লগইন না থাকে, login.html এ রিডাইরেক্ট করুন
         window.location = "login.html";
       }
     });
 
-    // ===== Logout Event =====
+    /* ===============================
+       Logout Event
+       =============================== */
     document.getElementById("logoutBtn").addEventListener("click", () => {
       auth.signOut()
-        .then(() => {
-          window.location = "login.html";
-        })
+        .then(() => window.location = "login.html")
         .catch(error => console.error("Logout error:", error));
     });
 
-    // ===== Recurring Options Toggle =====
+    /* ===============================
+       Recurring Options Toggle (Add & Edit Forms)
+       =============================== */
     document.getElementById("recurring").addEventListener("change", (e) => {
       document.getElementById("recurringOptions").style.display = e.target.checked ? "block" : "none";
     });
+    editRecurring.addEventListener("change", (e) => {
+      editRecurringOptions.style.display = e.target.checked ? "block" : "none";
+    });
 
-    // ===== Add Transaction =====
+    /* ===============================
+       Add Transaction
+       =============================== */
     transactionForm.addEventListener("submit", (e) => {
       e.preventDefault();
 
@@ -323,7 +492,57 @@ const firebaseConfig = {
         .catch(error => console.error("Error adding transaction:", error));
     });
 
-    // ===== Load Transactions from Firestore =====
+    /* ===============================
+       Edit Transaction
+       =============================== */
+    // Open Edit Modal and pre-fill data
+    function openEditModal(txId) {
+      db.collection("users").doc(currentUser.uid).collection("transactions").doc(txId).get()
+        .then(doc => {
+          if (doc.exists) {
+            const tx = doc.data();
+            editTxId.value = txId;
+            editType.value = tx.type;
+            editAmount.value = tx.amount;
+            editDate.value = tx.date;
+            editDescription.value = tx.description;
+            editCategory.value = tx.category;
+            editRecurring.checked = tx.recurring;
+            editRecurringOptions.style.display = tx.recurring ? "block" : "none";
+            if(tx.recurring) {
+              editRecurringInterval.value = tx.recurringInterval;
+            }
+            editTransactionModal.show();
+          }
+        })
+        .catch(error => console.error("Error loading transaction:", error));
+    }
+
+    // Handle edit form submit
+    editTransactionForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const txId = editTxId.value;
+      const updatedTx = {
+        type: editType.value,
+        amount: parseFloat(editAmount.value),
+        date: editDate.value,
+        description: editDescription.value,
+        category: editCategory.value,
+        recurring: editRecurring.checked,
+        recurringInterval: editRecurring.checked ? editRecurringInterval.value : ""
+      };
+      db.collection("users").doc(currentUser.uid).collection("transactions").doc(txId)
+        .update(updatedTx)
+        .then(() => {
+          editTransactionModal.hide();
+          alert("লেনদেন সফলভাবে আপডেট হয়েছে");
+        })
+        .catch(error => console.error("Error updating transaction:", error));
+    });
+
+    /* ===============================
+       Load Transactions from Firestore
+       =============================== */
     function loadTransactions() {
       db.collection("users").doc(currentUser.uid).collection("transactions")
         .orderBy("date", "desc")
@@ -345,6 +564,7 @@ const firebaseConfig = {
               <td>${tx.description}</td>
               <td>${tx.category}</td>
               <td>
+                <button class="btn btn-sm btn-primary me-1" onclick="openEditModal('${tx.id}')">এডিট</button>
                 <button class="btn btn-sm btn-danger" onclick="deleteTransaction('${tx.id}')">ডিলিট</button>
               </td>
             `;
@@ -366,14 +586,20 @@ const firebaseConfig = {
         });
     }
 
-    // ===== Delete Transaction =====
+    /* ===============================
+       Delete Transaction with Confirmation
+       =============================== */
     function deleteTransaction(id) {
-      db.collection("users").doc(currentUser.uid).collection("transactions").doc(id).delete()
-        .then(() => console.log("Transaction deleted"))
-        .catch(error => console.error("Error deleting transaction:", error));
+      if (confirm("আপনি কি নিশ্চিত যে আপনি এই লেনদেনটি মুছে ফেলতে চান?")) {
+        db.collection("users").doc(currentUser.uid).collection("transactions").doc(id).delete()
+          .then(() => alert("লেনদেন সফলভাবে মুছে ফেলা হয়েছে"))
+          .catch(error => console.error("Error deleting transaction:", error));
+      }
     }
 
-    // ===== Export Transactions as CSV =====
+    /* ===============================
+       Export Transactions as CSV
+       =============================== */
     exportBtn.addEventListener("click", () => {
       db.collection("users").doc(currentUser.uid).collection("transactions").get()
         .then(snapshot => {
@@ -394,7 +620,9 @@ const firebaseConfig = {
         .catch(error => console.error("Error exporting transactions:", error));
     });
 
-    // ===== Render Chart using Chart.js =====
+    /* ===============================
+       Render Chart using Chart.js
+       =============================== */
     function renderChart(transactions) {
       const categoryTotals = {};
       transactions.forEach(tx => {
@@ -423,16 +651,87 @@ const firebaseConfig = {
       });
     }
 
-    // ===== Settings Modal: Save Settings =====
+    /* ===============================
+       Settings Modal: Save Settings & Update Theme
+       =============================== */
     document.getElementById("saveSettings").addEventListener("click", () => {
       currentCurrency = currencySelect.value;
+      localStorage.setItem("currency", currentCurrency);
       currencySymbolEl.textContent = currentCurrency;
+
+      currentBudget = budgetInput.value || 0;
+      localStorage.setItem("budget", currentBudget);
+      totalBudgetEl.textContent = currentBudget;
+
+      currentTheme = themeSelect.value;
+      localStorage.setItem("theme", currentTheme);
+      updateTheme(currentTheme);
+      alert("সেটিংস সফলভাবে সেভ হয়েছে");
     });
 
-    // ===== Theme Toggle =====
-    themeToggle.addEventListener("click", () => {
-      document.body.classList.toggle("dark-mode");
+    /* ===============================
+       Update Theme Function
+       =============================== */
+    function updateTheme(theme) {
+      // Remove all theme classes from body then add selected
+      document.body.classList.remove("theme-light", "theme-dark", "theme-blue", "theme-highcontrast");
+      document.body.classList.add("theme-" + theme);
+    }
+
+    /* ===============================
+       Category Management: Load & Add Categories
+       =============================== */
+    function loadCategories() {
+      // Clear current options in transaction forms
+      const categorySelects = [document.getElementById("category"), document.getElementById("editCategory")];
+      categorySelects.forEach(sel => sel.innerHTML = "");
+
+      // Load categories from Firebase collection "categories" under current user.
+      db.collection("users").doc(currentUser.uid).collection("categories")
+        .orderBy("name")
+        .onSnapshot(snapshot => {
+          // Clear category list in settings modal
+          categoryList.innerHTML = "";
+          snapshot.forEach(doc => {
+            const cat = doc.data().name;
+            // Add option to each select element
+            categorySelects.forEach(sel => {
+              const option = document.createElement("option");
+              option.value = cat;
+              option.textContent = cat;
+              sel.appendChild(option);
+            });
+            // Add to settings category list
+            const li = document.createElement("li");
+            li.className = "list-group-item";
+            li.textContent = cat;
+            categoryList.appendChild(li);
+          });
+          // Optionally, if no category exists, add some defaults
+          if(snapshot.empty) {
+            const defaultCats = ["Food", "Transport", "Entertainment", "Health", "Others"];
+            defaultCats.forEach(cat => {
+              addCategoryToFirebase(cat);
+            });
+          }
+        });
+    }
+
+    addCategoryBtn.addEventListener("click", () => {
+      const newCat = newCategoryInput.value.trim();
+      if(newCat) {
+        addCategoryToFirebase(newCat);
+        newCategoryInput.value = "";
+      }
     });
+
+    function addCategoryToFirebase(catName) {
+      // Save category in "categories" collection for the current user
+      db.collection("users").doc(currentUser.uid).collection("categories")
+        .add({ name: catName })
+        .then(() => alert("ক্যাটাগরি সফলভাবে যোগ করা হয়েছে: " + catName))
+        .catch(error => console.error("Error adding category:", error));
+    }
   </script>
 </body>
 </html>
