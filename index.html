@@ -501,6 +501,26 @@
     updateTheme(currentTheme);
 
     /* ===============================
+       Utility Function: Get Current Date (YYYY-MM-DD)
+       =============================== */
+    function getCurrentDate() {
+      const today = new Date();
+      const dd = String(today.getDate()).padStart(2, '0');
+      const mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+      const yyyy = today.getFullYear();
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    /* ===============================
+       Set Default Dates for New Transaction Forms
+       =============================== */
+    // When the document is loaded, set default value for incomeDate & expenseDate
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("incomeDate").value = getCurrentDate();
+      document.getElementById("expenseDate").value = getCurrentDate();
+    });
+
+    /* ===============================
        Authentication Observer
        =============================== */
     auth.onAuthStateChanged(user => {
@@ -583,6 +603,8 @@
           console.log("ইনকাম লেনদেন সফলভাবে যোগ করা হয়েছে");
           e.target.reset();
           document.getElementById("incomeRecurringOptions").style.display = "none";
+          // Reset date to current date after submission
+          document.getElementById("incomeDate").value = getCurrentDate();
           bootstrap.Modal.getInstance(document.getElementById("addIncomeModal")).hide();
         })
         .catch(error => {
@@ -627,6 +649,8 @@
           console.log("এক্সপেন্স লেনদেন সফলভাবে যোগ করা হয়েছে");
           e.target.reset();
           document.getElementById("expenseRecurringOptions").style.display = "none";
+          // Reset date to current date after submission
+          document.getElementById("expenseDate").value = getCurrentDate();
           bootstrap.Modal.getInstance(document.getElementById("addExpenseModal")).hide();
         })
         .catch(error => {
@@ -669,7 +693,8 @@
             editTxId.value = txId;
             editType.value = tx.type;
             editAmount.value = tx.amount;
-            editDate.value = tx.date;
+            // যদি লেনদেনের তারিখ না থাকে, তাহলে ডিফল্ট হিসেবে চলমান তারিখ সেট করা হবে
+            editDate.value = tx.date || getCurrentDate();
             editDescription.value = tx.description;
             editCategory.value = tx.category;
             editRecurring.checked = tx.recurring;
