@@ -301,6 +301,22 @@
     </div>
   </div>
 
+  <!-- Transaction Options Modal (Three Dot Modal) -->
+  <div class="modal fade" id="transactionOptionsModal" tabindex="-1" aria-labelledby="transactionOptionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content glass-container">
+        <div class="modal-header">
+          <h5 class="modal-title" id="transactionOptionsModalLabel">অপশন</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
+        </div>
+        <div class="modal-body text-center">
+          <button id="optionEdit" class="btn btn-primary w-100 mb-2">এডিট</button>
+          <button id="optionDelete" class="btn btn-danger w-100">ডিলিট</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Transaction Modal (আগের মতই) -->
   <div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -361,6 +377,8 @@
     <div class="modal-dialog modal-lg">
       <div class="modal-content glass-container">
         <div class="modal-header">
+          <!-- ইউজারের ইমেইল প্রদর্শনের জন্য span (ডায়নামিকভাবে আপডেট হবে) -->
+          <span id="userEmailDisplay" class="me-auto text-muted"></span>
           <h5 class="modal-title" id="settingsModalLabel">সেটিংস</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
         </div>
@@ -421,7 +439,6 @@
     /* ===============================
        Firebase & App Initialization
        =============================== */
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
       authDomain: "my-app-a5b52.firebaseapp.com",
@@ -438,7 +455,6 @@
     /* ===============================
        Global Variables & DOM Elements
        =============================== */
-    // Transaction Table Elements
     const transactionTableBody = document.querySelector("#transactionTable tbody");
     const totalIncomeEl = document.getElementById("totalIncome");
     const totalExpenseEl = document.getElementById("totalExpense");
@@ -446,7 +462,7 @@
     const currencySymbolEl = document.getElementById("currencySymbol");
     const totalBudgetEl = document.getElementById("totalBudget");
     const exportBtn = document.getElementById("exportBtn");
-    
+
     // Settings DOM Elements
     const currencySelect = document.getElementById("currencySelect");
     const budgetInput = document.getElementById("budgetInput");
@@ -454,7 +470,7 @@
     const newCategoryInput = document.getElementById("newCategoryInput");
     const addCategoryBtn = document.getElementById("addCategoryBtn");
     const categoryList = document.getElementById("categoryList");
-    
+
     // Edit Transaction Modal Elements
     const editTransactionModal = new bootstrap.Modal(document.getElementById("editTransactionModal"));
     const editTransactionForm = document.getElementById("editTransactionForm");
@@ -473,6 +489,8 @@
     let currentBudget = localStorage.getItem("budget") || 0;
     let currentTheme = localStorage.getItem("theme") || "light";
     let currentUser = null;
+    // current transaction id used in transaction options modal
+    let currentTxIdForOptions = null;
     
     // Set saved settings in UI
     currencySelect.value = currentCurrency;
@@ -489,6 +507,8 @@
       if (user) {
         currentUser = user;
         console.log("Logged in as:", user.uid);
+        // Update user email in Settings modal
+        document.getElementById("userEmailDisplay").textContent = "ইউজার: " + (user.email || "অজানা");
         // নিশ্চিত করুন যে ব্যবহারকারীর ডকুমেন্টে role ফিল্ড আছে
         db.collection("users").doc(user.uid).get()
           .then(doc => {
@@ -616,6 +636,29 @@
     });
 
     /* ===============================
+       Transaction Options Modal: Open and set currentTxId
+       =============================== */
+    function openTransactionOptionsModal(txId) {
+      currentTxIdForOptions = txId;
+      // Open the modal for transaction options
+      new bootstrap.Modal(document.getElementById("transactionOptionsModal")).show();
+    }
+
+    // Handle Edit & Delete button clicks in Transaction Options Modal
+    document.getElementById("optionEdit").addEventListener("click", () => {
+      openEditModal(currentTxIdForOptions);
+      bootstrap.Modal.getInstance(document.getElementById("transactionOptionsModal")).hide();
+    });
+
+    document.getElementById("optionDelete").addEventListener("click", () => {
+      // Confirm before deletion
+      if (confirm("আপনি কি নিশ্চিত যে আপনি এই লেনদেনটি মুছে ফেলতে চান?")) {
+        deleteTransaction(currentTxIdForOptions);
+        bootstrap.Modal.getInstance(document.getElementById("transactionOptionsModal")).hide();
+      }
+    });
+
+    /* ===============================
        Edit Transaction
        =============================== */
     function openEditModal(txId) {
@@ -683,8 +726,7 @@
               <td>${tx.description}</td>
               <td>${tx.category}</td>
               <td>
-                <button class="btn btn-sm btn-primary me-1" onclick="openEditModal('${tx.id}')">এডিট</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteTransaction('${tx.id}')">ডিলিট</button>
+                <button class="btn btn-sm btn-secondary" onclick="openTransactionOptionsModal('${tx.id}')">⋮</button>
               </td>
             `;
             transactionTableBody.appendChild(tr);
@@ -703,14 +745,12 @@
     }
 
     /* ===============================
-       Delete Transaction with Confirmation
+       Delete Transaction (Called from Options Modal)
        =============================== */
     function deleteTransaction(id) {
-      if (confirm("আপনি কি নিশ্চিত যে আপনি এই লেনদেনটি মুছে ফেলতে চান?")) {
-        db.collection("users").doc(currentUser.uid).collection("transactions").doc(id).delete()
-          .then(() => alert("লেনদেন সফলভাবে মুছে ফেলা হয়েছে"))
-          .catch(error => console.error("Error deleting transaction:", error));
-      }
+      db.collection("users").doc(currentUser.uid).collection("transactions").doc(id).delete()
+        .then(() => alert("লেনদেন সফলভাবে মুছে ফেলা হয়েছে"))
+        .catch(error => console.error("Error deleting transaction:", error));
     }
 
     /* ===============================
