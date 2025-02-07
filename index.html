@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>উন্নত ডেইলি এক্সপেন্স ট্র্যাকার (Firebase Roles সহ)</title>
+  <title>উন্নত ডেইলি এক্সপেন্স ট্র্যাকার (Firebase Admin Check সহ)</title>
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Chart.js -->
@@ -102,7 +102,7 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarContent">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-          <!-- Additional Admin Panel Button (visible for admin role) -->
+          <!-- Admin Panel Button (will be shown only for admins) -->
           <li class="nav-item" id="adminPanelBtn" style="display: none;">
             <button class="btn btn-outline-light me-2">অ্যাডমিন প্যানেল</button>
           </li>
@@ -457,7 +457,7 @@
     // Import Firebase modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     // Firebase configuration
     const firebaseConfig = {
@@ -477,7 +477,7 @@
 
     // Global variables and DOM elements
     let currentUser = null;
-    let transactionsData = []; // Store transactions for filtering
+    let transactionsData = [];
     let chartInstance = null;
     let currentCurrency = localStorage.getItem("currency") || "$";
     let currentBudget = localStorage.getItem("budget") || 0;
@@ -541,23 +541,32 @@
       document.getElementById("expenseDate").value = getCurrentDate();
     });
 
+    // Function to check if logged in user is an admin by querying the "adminlist" collection
+    async function checkIfAdmin(userEmail) {
+      const adminQuery = query(collection(db, "adminlist"), where("email", "==", userEmail));
+      const querySnapshot = await getDocs(adminQuery);
+      return !querySnapshot.empty;
+    }
+
     // Authentication observer
-    onAuthStateChanged(auth, async user => {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
         document.getElementById("userEmailDisplay").textContent = "ইউজার: " + (user.email || "অজানা");
-        // Check for user document and role
+
+        // Check if the user is an admin using the separate adminlist collection
+        const isAdmin = await checkIfAdmin(user.email);
+        if (isAdmin) {
+          document.getElementById("adminPanelBtn").style.display = "block";
+        } else {
+          document.getElementById("adminPanelBtn").style.display = "none";
+        }
+
+        // You may also create/update a user document if needed:
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
         if (!userDoc.exists()) {
-          // Set default role as user
-          await setDoc(userDocRef, { role: "user", email: user.email || "" });
-        } else {
-          const userData = userDoc.data();
-          // If user is admin, show admin panel button
-          if(userData.role === "admin") {
-            document.getElementById("adminPanelBtn").style.display = "block";
-          }
+          await setDoc(userDocRef, { email: user.email || "" });
         }
         loadTransactions();
         loadCategories();
@@ -743,7 +752,6 @@
           transactionsData.push(tx);
         });
         renderTransactions(transactionsData);
-        // Update summary totals
         transactionsData.forEach(tx => {
           if (tx.type === "income") totalIncome += tx.amount;
           else totalExpense += tx.amount;
