@@ -74,12 +74,10 @@
       const password = document.getElementById("signupPassword").value;
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // এখানে Firestore-এ ব্যবহারকারীর ডকুমেন্ট তৈরি হবে,
-        // যেখানে ডকুমেন্ট আইডি হিসেবে ইমেইল, এবং অতিরিক্ত ফিল্ড "role" ("user" হিসেবে ডিফল্ট) রাখা হবে
-        await setDoc(doc(db, "users", email), {
+        // Firestore-এ ব্যবহারকারীর ডকুমেন্ট তৈরি, যেখানে name ও email সংরক্ষণ করা হবে
+        await setDoc(doc(db, "users", userCredential.user.uid), {
           name: name,
-          email: email,
-          role: "user"  // ডিফল্টভাবে "user" হবে, প্রয়োজনে অ্যাডমিন হিসেবে আপডেট করুন
+          email: email
         });
         showToast("সাইন আপ সফল হয়েছে", "success");
         window.location = "index.html";
