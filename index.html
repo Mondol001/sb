@@ -519,32 +519,33 @@
       document.getElementById("expenseDate").value = getCurrentDate();
     });
 
-    // Check if user is admin using "adminlist" collection
-    async function checkIfAdmin(userEmail) {
-      const adminQuery = query(collection(db, "adminlist"), where("email", "==", userEmail));
-      const querySnapshot = await getDocs(adminQuery);
-      return !querySnapshot.empty;
+    import { getDoc, doc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+// ...
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    document.getElementById("userEmailDisplay").textContent = "ইউজার: " + (user.email || "অজানা");
+
+    // এখানে আমরা Firestore থেকে ইউজারের ডকুমেন্টটি নিয়ে তার role ফিল্ড চেক করছি
+    const userDocRef = doc(db, "users", user.email);
+    const userDoc = await getDoc(userDocRef);
+    let isAdmin = false;
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      isAdmin = userData.role === "admin";
     }
+    // অ্যাডমিন প্যানেল বাটন শুধুমাত্র অ্যাডমিন হলে দেখানো হবে
+    document.getElementById("adminPanelBtn").style.display = isAdmin ? "block" : "none";
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUser = user;
-        document.getElementById("userEmailDisplay").textContent = "ইউজার: " + (user.email || "অজানা");
-
-        const isAdmin = await checkIfAdmin(user.email);
-        document.getElementById("adminPanelBtn").style.display = isAdmin ? "block" : "none";
-
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (!userDoc.exists()) {
-          await setDoc(userDocRef, { email: user.email || "" });
-        }
-        loadTransactions();
-        loadCategories();
-      } else {
-        window.location = "login.html";
-      }
-    });
+    // অন্যান্য ইউজার লোড ও ট্রানজ্যাকশন লোডের কোড...
+    loadTransactions();
+    loadCategories();
+  } else {
+    window.location = "login.html";
+  }
+});
 
     document.getElementById("logoutBtn").addEventListener("click", () => {
       signOut(auth)
