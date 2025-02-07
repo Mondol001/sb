@@ -8,9 +8,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f8f9fa;
       padding-top: 2rem;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
   </style>
 </head>
@@ -23,69 +23,56 @@
         <tr>
           <th>UID</th>
           <th>ইমেইল</th>
-          <!-- অতিরিক্ত তথ্য দেখানোর জন্য আরো কলাম যোগ করা যেতে পারে -->
+          <!-- প্রয়োজনে অন্যান্য তথ্যও দেখানো যাবে -->
         </tr>
       </thead>
-      <tbody id="usersTableBody">
-        <!-- Firestore থেকে লোড হওয়া ইউজার তথ্য এখানে দেখানো হবে -->
-      </tbody>
+      <tbody id="usersTableBody"></tbody>
     </table>
   </div>
 
-  <!-- Firebase & Admin Page JS (Firebase Modular SDK ব্যবহার করে) -->
+  <!-- Firebase & App Code -->
   <script type="module">
-    // Firebase SDK মডিউল ইমপোর্ট করুন
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    // আপনার Firebase কনফিগারেশন (firebaseConfig) – নিশ্চিত করুন যে এটি সঠিক
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
-  authDomain: "my-app-a5b52.firebaseapp.com",
-  projectId: "my-app-a5b52",
-  storageBucket: "my-app-a5b52.firebasestorage.app",
-  messagingSenderId: "213828908146",
-  appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
-  measurementId: "G-RX02N4FEEH"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
+      authDomain: "my-app-a5b52.firebaseapp.com",
+      projectId: "my-app-a5b52",
+      storageBucket: "my-app-a5b52.firebasestorage.app",
+      messagingSenderId: "213828908146",
+      appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
+      measurementId: "G-RX02N4FEEH"
+    };
 
-    // Firebase অ্যাপ ইনিশিয়ালাইজ করুন
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // adminlist কালেকশন থেকে এডমিন কিনা যাচাই করার ফাংশন
+    // এডমিন যাচাই: adminlist কালেকশনে ইমেইল মিল থাকলে এডমিন ধরা হবে
     async function checkIfAdmin(userEmail) {
       const adminQuery = query(collection(db, "adminlist"), where("email", "==", userEmail));
       const querySnapshot = await getDocs(adminQuery);
-      return !querySnapshot.empty; // ডকুমেন্ট পাওয়া গেলে true
+      return !querySnapshot.empty;
     }
 
-    // ব্যবহারকারী লগইন অবজার্ভ করুন
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // এডমিন কিনা যাচাই করুন
         const isAdmin = await checkIfAdmin(user.email);
         if (!isAdmin) {
-          // যদি এডমিন না হয়, তাহলে এই পেজ থেকে রিডাইরেক্ট করুন (অথবা অন্য কোন বার্তা দেখান)
           alert("এই পেজটি শুধুমাত্র এডমিনদের জন্য।");
           window.location = "index.html";
           return;
         }
-        // এডমিন হলে ইউজার তালিকা লোড করুন
         loadUsers();
       } else {
-        // যদি ব্যবহারকারী লগইন না থাকে, তাহলে লগইন পেজে নিয়ে যান
         window.location = "login.html";
       }
     });
 
-    // Firestore থেকে সকল ব্যবহারকারীর তথ্য লোড করার ফাংশন
     async function loadUsers() {
       try {
-        // এখানে আমরা "users" কালেকশন থেকে সকল ডকুমেন্ট রিড করছি
         const usersSnapshot = await getDocs(collection(db, "users"));
         const usersTableBody = document.getElementById("usersTableBody");
         usersTableBody.innerHTML = "";
@@ -107,5 +94,6 @@ const firebaseConfig = {
       }
     }
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
