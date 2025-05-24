@@ -3,900 +3,221 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>উন্নত ডেইলি এক্সপেন্স ট্র্যাকার (Firebase Admin Check সহ)</title>
-  <!-- Bootstrap 5 CSS -->
+  <title>আমার অর্থ ব্যবস্থাপনা</title>
+  
+  <!-- CSS ডিপেন্ডেন্সি -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet>
+
   <style>
-    /* Global Styles & Transitions */
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      transition: background-color 0.3s ease, color 0.3s ease;
+    :root {
+      --primary: #4361ee;
+      --danger: #ef476f;
+      --success: #06d6a0;
     }
-    /* 4 Themes */
-    body.theme-light {
-      background: #f8f9fa;
-      color: #333;
+
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
     }
-    body.theme-dark {
-      background: #222;
-      color: #ddd;
-    }
-    body.theme-blue {
-      background: #e7f0fd;
-      color: #0a1f44;
-    }
-    body.theme-highcontrast {
-      background: #000;
-      color: #fff;
-    }
-    /* Glassmorphism Card Style */
-    .card {
-      background: rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(10px);
-      border: none;
-      border-radius: 15px;
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    }
-    body.theme-dark .card,
-    body.theme-highcontrast .card {
-      background: rgba(0, 0, 0, 0.6);
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
-    }
-    /* Navbar */
-    .navbar {
-      background-color: rgba(0, 123, 255, 0.85) !important;
-      backdrop-filter: blur(10px);
-    }
-    /* Table Styling */
-    .table-striped tbody tr:nth-of-type(odd) {
-      background-color: rgba(255,255,255,0.3);
-    }
-    body.theme-dark .table-striped tbody tr:nth-of-type(odd),
-    body.theme-highcontrast .table-striped tbody tr:nth-of-type(odd) {
-      background-color: rgba(0,0,0,0.3);
-    }
-    /* Custom Buttons */
-    .btn-outline-light:hover, .btn-outline-light:focus {
-      background-color: #fff;
-      color: #000;
-    }
-    /* Card Header */
-    .card-header {
-      font-weight: bold;
-      background: rgba(0,0,0,0.1);
-      backdrop-filter: blur(5px);
-    }
-    /* Glass Container for Modals */
-    .glass-container {
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
-      padding: 20px;
-    }
-    /* Toast Notification Styling */
-    #toastContainer {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      z-index: 1055;
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
-<body class="theme-light">
-  <!-- Navigation Bar -->
-  <nav class="navbar navbar-expand-lg navbar-dark">
+<body>
+
+<!-- লোডিং স্ক্রিন -->
+<div id="loading" class="vh-100 d-flex justify-content-center align-items-center">
+  <div class="loader"></div>
+</div>
+
+<!-- মেইন কন্টেন্ট -->
+<div id="app" style="display: none;">
+  <nav class="navbar bg-primary text-white p-3">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">Expense Tracker</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
-        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
+      <h4>অর্থ ব্যবস্থাপনা</h4>
+      <button id="logoutBtn" class="btn btn-light">
+        <i class="mdi mdi-logout"></i> লগআউট
       </button>
-      <div class="collapse navbar-collapse" id="navbarContent">
-        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-          <!-- Admin Panel Button (only visible for admins) -->
-          <li class="nav-item" id="adminPanelBtn" style="display: none;">
-            <button class="btn btn-outline-light me-2">অ্যাডমিন প্যানেল</button>
-          </li>
-          <!-- Settings & Logout -->
-          <li class="nav-item">
-            <button id="settingsBtn" class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#settingsModal">সেটিংস</button>
-          </li>
-          <li class="nav-item">
-            <button id="logoutBtn" class="btn btn-outline-light">লগ আউট</button>
-          </li>
-        </ul>
-      </div>
     </div>
   </nav>
 
-  <!-- Toast Container -->
-  <div id="toastContainer"></div>
-
-  <!-- Main Container -->
-  <div class="container my-4">
-    <!-- Filter/Search Section -->
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <input type="text" id="searchInput" class="form-control" placeholder="লেনদেন অনুসন্ধান করুন...">
-      </div>
-      <div class="col-md-6">
-        <select id="filterCategory" class="form-select">
-          <option value="">সমস্ত ক্যাটাগরি</option>
-        </select>
-      </div>
-    </div>
-    <div class="row g-4">
-      <!-- Transaction Action Buttons -->
-      <div class="col-lg-4">
-        <div class="card shadow-sm p-3 text-center">
-          <h5 class="mb-3">নতুন লেনদেন যুক্ত করুন</h5>
-          <button class="btn btn-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#addIncomeModal">ইনকাম যুক্ত করুন</button>
-          <button class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#addExpenseModal">এক্সপেন্স যুক্ত করুন</button>
-        </div>
-      </div>
-      <!-- Transaction List & Summary -->
-      <div class="col-lg-8">
-        <!-- Summary Cards -->
-        <div class="row mb-3">
-          <div class="col-md-3">
-            <div class="card text-bg-light shadow-sm">
-              <div class="card-body">
-                <h6 class="card-subtitle">মোট ইনকাম</h6>
-                <h4 id="totalIncome">0</h4>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card text-bg-light shadow-sm">
-              <div class="card-body">
-                <h6 class="card-subtitle">মোট এক্সপেন্স</h6>
-                <h4 id="totalExpense">0</h4>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card text-bg-light shadow-sm">
-              <div class="card-body">
-                <h6 class="card-subtitle">ব্যালেন্স (<span id="currencySymbol">$</span>)</h6>
-                <h4 id="balance">0</h4>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card text-bg-light shadow-sm">
-              <div class="card-body">
-                <h6 class="card-subtitle">মোট বাজেট</h6>
-                <h4 id="totalBudget">0</h4>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Transaction Table -->
-        <div class="card shadow-sm mb-3">
-          <div class="card-header bg-info text-white">
-            <h5 class="card-title mb-0">লেনদেনের তালিকা</h5>
-          </div>
-          <div class="card-body table-responsive">
-            <table class="table table-striped" id="transactionTable">
-              <thead>
-                <tr>
-                  <th>ধরন</th>
-                  <th>পরিমাণ</th>
-                  <th>তারিখ</th>
-                  <th>বিবরণ</th>
-                  <th>ক্যাটাগরি</th>
-                  <th>অপশন</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Transactions will load here -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <!-- Export Button -->
-        <div class="d-flex justify-content-end mb-3">
-          <button id="exportBtn" class="btn btn-outline-primary">এক্সপোর্ট করুন (CSV)</button>
-        </div>
-        <!-- Reporting Chart -->
-        <div class="card shadow-sm">
-          <div class="card-header bg-secondary text-white">
-            <h5 class="card-title mb-0">ক্যাটাগরি অনুযায়ী ব্যয় চার্ট</h5>
-          </div>
+  <div class="container mt-4">
+    <!-- সামারি কার্ড -->
+    <div class="row mb-4">
+      <div class="col-md-4 mb-3">
+        <div class="card shadow">
           <div class="card-body">
-            <canvas id="expenseChart" width="400" height="200"></canvas>
+            <h5>মোট ব্যালেন্স</h5>
+            <h2 id="balance">৳ 0</h2>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Modals Section -->
-  <!-- Add Income Modal -->
-  <div class="modal fade" id="addIncomeModal" tabindex="-1" aria-labelledby="addIncomeModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content glass-container">
-        <div class="modal-header">
-          <h5 class="modal-title" id="addIncomeModalLabel">ইনকাম লেনদেন যুক্ত করুন</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
-        </div>
-        <div class="modal-body">
-          <form id="incomeForm">
-            <input type="hidden" id="incomeType" value="income">
-            <div class="mb-3">
-              <label for="incomeAmount" class="form-label">পরিমাণ</label>
-              <input type="number" id="incomeAmount" class="form-control" placeholder="টাকার পরিমাণ" required>
-            </div>
-            <div class="mb-3">
-              <label for="incomeDate" class="form-label">তারিখ</label>
-              <input type="date" id="incomeDate" class="form-control" required>
-            </div>
-            <div class="mb-3">
-              <label for="incomeDescription" class="form-label">বিবরণ</label>
-              <input type="text" id="incomeDescription" class="form-control" placeholder="বিবরণ লিখুন">
-            </div>
-            <div class="mb-3">
-              <label for="incomeCategory" class="form-label">ক্যাটাগরি</label>
-              <select id="incomeCategory" class="form-select" required>
-                <!-- Options loaded from Firestore -->
-              </select>
-            </div>
-            <div class="form-check mb-3">
-              <input type="checkbox" class="form-check-input" id="incomeRecurring">
-              <label class="form-check-label" for="incomeRecurring">Recurring Transaction?</label>
-            </div>
-            <div class="mb-3" id="incomeRecurringOptions" style="display:none;">
-              <label for="incomeRecurringInterval" class="form-label">Recurring Interval</label>
-              <select id="incomeRecurringInterval" class="form-select">
-                <option value="daily">দৈনিক</option>
-                <option value="weekly">সাপ্তাহিক</option>
-                <option value="monthly">মাসিক</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-success w-100">যোগ করুন</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add Expense Modal -->
-  <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content glass-container">
-        <div class="modal-header">
-          <h5 class="modal-title" id="addExpenseModalLabel">এক্সপেন্স লেনদেন যুক্ত করুন</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
-        </div>
-        <div class="modal-body">
-          <form id="expenseForm">
-            <input type="hidden" id="expenseType" value="expense">
-            <div class="mb-3">
-              <label for="expenseAmount" class="form-label">পরিমাণ</label>
-              <input type="number" id="expenseAmount" class="form-control" placeholder="টাকার পরিমাণ" required>
-            </div>
-            <div class="mb-3">
-              <label for="expenseDate" class="form-label">তারিখ</label>
-              <input type="date" id="expenseDate" class="form-control" required>
-            </div>
-            <div class="mb-3">
-              <label for="expenseDescription" class="form-label">বিবরণ</label>
-              <input type="text" id="expenseDescription" class="form-control" placeholder="বিবরণ লিখুন">
-            </div>
-            <div class="mb-3">
-              <label for="expenseCategory" class="form-label">ক্যাটাগরি</label>
-              <select id="expenseCategory" class="form-select" required>
-                <!-- Options loaded from Firestore -->
-              </select>
-            </div>
-            <div class="form-check mb-3">
-              <input type="checkbox" class="form-check-input" id="expenseRecurring">
-              <label class="form-check-label" for="expenseRecurring">Recurring Transaction?</label>
-            </div>
-            <div class="mb-3" id="expenseRecurringOptions" style="display:none;">
-              <label for="expenseRecurringInterval" class="form-label">Recurring Interval</label>
-              <select id="expenseRecurringInterval" class="form-select">
-                <option value="daily">দৈনিক</option>
-                <option value="weekly">সাপ্তাহিক</option>
-                <option value="monthly">মাসিক</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-danger w-100">যোগ করুন</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Transaction Options Modal -->
-  <div class="modal fade" id="transactionOptionsModal" tabindex="-1" aria-labelledby="transactionOptionsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-      <div class="modal-content glass-container">
-        <div class="modal-header">
-          <h5 class="modal-title" id="transactionOptionsModalLabel">অপশন</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
-        </div>
-        <div class="modal-body text-center">
-          <button id="optionEdit" class="btn btn-primary w-100 mb-2">এডিট</button>
-          <button id="optionDelete" class="btn btn-danger w-100">ডিলিট</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Transaction Modal -->
-  <div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content glass-container">
-        <div class="modal-header">
-          <h5 class="modal-title" id="editTransactionModalLabel">লেনদেন সম্পাদনা করুন</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
-        </div>
-        <div class="modal-body">
-          <form id="editTransactionForm">
-            <input type="hidden" id="editTxId">
-            <div class="mb-3">
-              <label for="editType" class="form-label">ধরন</label>
-              <select id="editType" class="form-select" required>
-                <option value="income">ইনকাম</option>
-                <option value="expense">এক্সপেন্স</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label for="editAmount" class="form-label">পরিমাণ</label>
-              <input type="number" id="editAmount" class="form-control" placeholder="টাকার পরিমাণ" required>
-            </div>
-            <div class="mb-3">
-              <label for="editDate" class="form-label">তারিখ</label>
-              <input type="date" id="editDate" class="form-control" required>
-            </div>
-            <div class="mb-3">
-              <label for="editDescription" class="form-label">বিবরণ</label>
-              <input type="text" id="editDescription" class="form-control" placeholder="বিবরণ লিখুন">
-            </div>
-            <div class="mb-3">
-              <label for="editCategory" class="form-label">ক্যাটাগরি</label>
-              <select id="editCategory" class="form-select" required>
-                <!-- Options loaded from Firestore -->
-              </select>
-            </div>
-            <div class="form-check mb-3">
-              <input type="checkbox" class="form-check-input" id="editRecurring">
-              <label class="form-check-label" for="editRecurring">Recurring Transaction?</label>
-            </div>
-            <div class="mb-3" id="editRecurringOptions" style="display:none;">
-              <label for="editRecurringInterval" class="form-label">Recurring Interval</label>
-              <select id="editRecurringInterval" class="form-select">
-                <option value="daily">দৈনিক</option>
-                <option value="weekly">সাপ্তাহিক</option>
-                <option value="monthly">মাসিক</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">আপডেট করুন</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Settings Modal -->
-  <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content glass-container">
-        <div class="modal-header">
-          <span id="userEmailDisplay" class="me-auto text-muted"></span>
-          <h5 class="modal-title" id="settingsModalLabel">সেটিংস</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="বন্ধ"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label for="currencySelect" class="form-label">কারেন্সি সিলেক্ট করুন</label>
-              <select id="currencySelect" class="form-select">
-                <option value="$">$ - USD</option>
-                <option value="€">€ - EUR</option>
-                <option value="£">£ - GBP</option>
-                <option value="৳">৳ - BDT</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="budgetInput" class="form-label">মোট বাজেট</label>
-              <input type="number" id="budgetInput" class="form-control" placeholder="আপনার বাজেট লিখুন">
-            </div>
-            <div class="col-md-4">
-              <label for="themeSelect" class="form-label">থিম নির্বাচন করুন</label>
-              <select id="themeSelect" class="form-select">
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-                <option value="blue">Blue</option>
-                <option value="highcontrast">High Contrast</option>
-              </select>
-            </div>
+    <!-- লেনদেন ফর্ম -->
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <form id="transactionForm">
+          <div class="mb-3">
+            <label>লেনদেনের ধরন</label>
+            <select id="type" class="form-select">
+              <option value="income">আয়</option>
+              <option value="expense">ব্যয়</option>
+            </select>
           </div>
-          <hr>
-          <div class="row g-3">
-            <div class="col-md-8">
-              <label class="form-label">বর্তমান ক্যাটাগরি</label>
-              <ul id="categoryList" class="list-group">
-                <!-- Categories will be loaded here -->
-              </ul>
-            </div>
-            <div class="col-md-4">
-              <label for="newCategoryInput" class="form-label">নতুন ক্যাটাগরি</label>
-              <input type="text" id="newCategoryInput" class="form-control" placeholder="নতুন ক্যাটাগরি লিখুন">
-              <button id="addCategoryBtn" class="btn btn-secondary w-100 mt-2">যোগ করুন</button>
-            </div>
+          <div class="mb-3">
+            <label>পরিমাণ</label>
+            <input type="number" id="amount" class="form-control" required>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button id="saveSettings" type="button" class="btn btn-primary" data-bs-dismiss="modal">সেভ করুন</button>
+          <button type="submit" class="btn btn-primary">যোগ করুন</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- লেনদেন তালিকা -->
+    <div class="card shadow">
+      <div class="card-body">
+        <h5 class="card-title">লেনদেনের ইতিহাস</h5>
+        <div id="transactionContainer" class="mt-3">
+          <!-- ডাইনামিক কন্টেন্ট লোড হবে -->
         </div>
       </div>
     </div>
   </div>
- <!-- Bootstrap 5 JS Bundle (includes Popper) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Firebase Modular SDK & App Code -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
-      authDomain: "my-app-a5b52.firebaseapp.com",
-      projectId: "my-app-a5b52",
-      storageBucket: "my-app-a5b52.firebasestorage.app",
-      messagingSenderId: "213828908146",
-      appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
-      measurementId: "G-RX02N4FEEH"
-    };
+<!-- Firebase সেটআপ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { 
+    getAuth, 
+    signOut, 
+    onAuthStateChanged, 
+    GoogleAuthProvider, 
+    signInWithPopup 
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    query, 
+    where, 
+    orderBy, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+  // Firebase কনফিগারেশন (আপনার ডেটা দিয়ে পরিবর্তন করুন)
+  const firebaseConfig = {
+    apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
+    authDomain: "my-app-a5b52.firebaseapp.com",
+    projectId: "my-app-a5b52",
+    storageBucket: "my-app-a5b52.firebasestorage.app",
+    messagingSenderId: "213828908146",
+    appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb"
+  };
 
-    let currentUser = null;
-    let transactionsData = [];
-    let chartInstance = null;
-    let currentCurrency = localStorage.getItem("currency") || "$";
-    let currentBudget = localStorage.getItem("budget") || 0;
-    let currentTheme = localStorage.getItem("theme") || "light";
+  // Firebase ইনিশিয়ালাইজেশন
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
 
-    const transactionTableBody = document.querySelector("#transactionTable tbody");
-    const totalIncomeEl = document.getElementById("totalIncome");
-    const totalExpenseEl = document.getElementById("totalExpense");
-    const balanceEl = document.getElementById("balance");
-    const currencySymbolEl = document.getElementById("currencySymbol");
-    const totalBudgetEl = document.getElementById("totalBudget");
-    const exportBtn = document.getElementById("exportBtn");
-
-    const currencySelect = document.getElementById("currencySelect");
-    const budgetInput = document.getElementById("budgetInput");
-    const themeSelect = document.getElementById("themeSelect");
-    const newCategoryInput = document.getElementById("newCategoryInput");
-    const addCategoryBtn = document.getElementById("addCategoryBtn");
-    const categoryList = document.getElementById("categoryList");
-
-    const searchInput = document.getElementById("searchInput");
-    const filterCategory = document.getElementById("filterCategory");
-
-    const editTransactionModalEl = document.getElementById("editTransactionModal");
-    const editTransactionModal = new bootstrap.Modal(editTransactionModalEl);
-    const editTransactionForm = document.getElementById("editTransactionForm");
-    const editTxId = document.getElementById("editTxId");
-    const editType = document.getElementById("editType");
-    const editAmount = document.getElementById("editAmount");
-    const editDate = document.getElementById("editDate");
-    const editDescription = document.getElementById("editDescription");
-    const editCategory = document.getElementById("editCategory");
-    const editRecurring = document.getElementById("editRecurring");
-    const editRecurringOptions = document.getElementById("editRecurringOptions");
-    const editRecurringInterval = document.getElementById("editRecurringInterval");
-
-    let currentTxIdForOptions = null;
-
-    currencySelect.value = currentCurrency;
-    budgetInput.value = currentBudget;
-    themeSelect.value = currentTheme;
-    totalBudgetEl.textContent = currentBudget;
-    currencySymbolEl.textContent = currentCurrency;
-    updateTheme(currentTheme);
-
-    const getCurrentDate = () => {
-      const today = new Date();
-      const dd = String(today.getDate()).padStart(2, '0');
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const yyyy = today.getFullYear();
-      return `${yyyy}-${mm}-${dd}`;
-    };
-
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("incomeDate").value = getCurrentDate();
-      document.getElementById("expenseDate").value = getCurrentDate();
-    });
-
-    // Check if user is admin using "adminlist" collection
-    async function checkIfAdmin(userEmail) {
-      const adminQuery = query(collection(db, "adminlist"), where("email", "==", userEmail));
-      const querySnapshot = await getDocs(adminQuery);
-      return !querySnapshot.empty;
+  class FinanceApp {
+    constructor() {
+      this.transactions = [];
+      this.init();
     }
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUser = user;
-        document.getElementById("userEmailDisplay").textContent = "ইউজার: " + (user.email || "অজানা");
-
-        const isAdmin = await checkIfAdmin(user.email);
-        document.getElementById("adminPanelBtn").style.display = isAdmin ? "block" : "none";
-
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (!userDoc.exists()) {
-          await setDoc(userDocRef, { email: user.email || "" });
-        }
-        loadTransactions();
-        loadCategories();
-      } else {
-        window.location = "login.html";
-      }
-    });
-
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      signOut(auth)
-        .then(() => window.location = "login.html")
-        .catch(error => showToast("Logout error: " + error.message, "danger"));
-    });
-
-    document.getElementById("incomeRecurring").addEventListener("change", (e) => {
-      document.getElementById("incomeRecurringOptions").style.display = e.target.checked ? "block" : "none";
-    });
-    document.getElementById("expenseRecurring").addEventListener("change", (e) => {
-      document.getElementById("expenseRecurringOptions").style.display = e.target.checked ? "block" : "none";
-    });
-
-    document.getElementById("incomeForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const type = document.getElementById("incomeType").value;
-      const amount = parseFloat(document.getElementById("incomeAmount").value);
-      const date = document.getElementById("incomeDate").value;
-      const description = document.getElementById("incomeDescription").value;
-      const category = document.getElementById("incomeCategory").value;
-      const recurring = document.getElementById("incomeRecurring").checked;
-      const recurringInterval = recurring ? document.getElementById("incomeRecurringInterval").value : "";
-      
-      if (!amount || !date || !category) {
-        alert("অনুগ্রহ করে সব প্রয়োজনীয় ফিল্ড পূরণ করুন");
-        return;
-      }
-      
-      const newTx = {
-        type,
-        amount,
-        date,
-        description,
-        category,
-        recurring,
-        recurringInterval,
-        currency: currentCurrency,
-        createdAt: serverTimestamp()
-      };
-      
-      try {
-        await addDoc(collection(db, "users", currentUser.uid, "transactions"), newTx);
-        showToast("ইনকাম লেনদেন সফলভাবে যোগ করা হয়েছে", "success");
-        e.target.reset();
-        document.getElementById("incomeRecurringOptions").style.display = "none";
-        document.getElementById("incomeDate").value = getCurrentDate();
-        bootstrap.Modal.getInstance(document.getElementById("addIncomeModal")).hide();
-      } catch (error) {
-        showToast("লেনদেন যোগ করতে গিয়ে সমস্যা হয়েছে: " + error.message, "danger");
-      }
-    });
-
-    document.getElementById("expenseForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const type = document.getElementById("expenseType").value;
-      const amount = parseFloat(document.getElementById("expenseAmount").value);
-      const date = document.getElementById("expenseDate").value;
-      const description = document.getElementById("expenseDescription").value;
-      const category = document.getElementById("expenseCategory").value;
-      const recurring = document.getElementById("expenseRecurring").checked;
-      const recurringInterval = recurring ? document.getElementById("expenseRecurringInterval").value : "";
-      
-      if (!amount || !date || !category) {
-        alert("অনুগ্রহ করে সব প্রয়োজনীয় ফিল্ড পূরণ করুন");
-        return;
-      }
-      
-      const newTx = {
-        type,
-        amount,
-        date,
-        description,
-        category,
-        recurring,
-        recurringInterval,
-        currency: currentCurrency,
-        createdAt: serverTimestamp()
-      };
-      
-      try {
-        await addDoc(collection(db, "users", currentUser.uid, "transactions"), newTx);
-        showToast("এক্সপেন্স লেনদেন সফলভাবে যোগ করা হয়েছে", "success");
-        e.target.reset();
-        document.getElementById("expenseRecurringOptions").style.display = "none";
-        document.getElementById("expenseDate").value = getCurrentDate();
-        bootstrap.Modal.getInstance(document.getElementById("addExpenseModal")).hide();
-      } catch (error) {
-        showToast("লেনদেন যোগ করতে গিয়ে সমস্যা হয়েছে: " + error.message, "danger");
-      }
-    });
-
-    window.openTransactionOptionsModal = (txId) => {
-      currentTxIdForOptions = txId;
-      new bootstrap.Modal(document.getElementById("transactionOptionsModal")).show();
-    };
-
-    document.getElementById("optionEdit").addEventListener("click", () => {
-      openEditModal(currentTxIdForOptions);
-      bootstrap.Modal.getInstance(document.getElementById("transactionOptionsModal")).hide();
-    });
-    document.getElementById("optionDelete").addEventListener("click", async () => {
-      if (confirm("আপনি কি নিশ্চিত যে আপনি এই লেনদেনটি মুছে ফেলতে চান?")) {
-        try {
-          await deleteDoc(doc(db, "users", currentUser.uid, "transactions", currentTxIdForOptions));
-          showToast("লেনদেন সফলভাবে মুছে ফেলা হয়েছে", "success");
-        } catch (error) {
-          showToast("ডিলিট করতে সমস্যা: " + error.message, "danger");
-        }
-        bootstrap.Modal.getInstance(document.getElementById("transactionOptionsModal")).hide();
-      }
-    });
-
-    async function openEditModal(txId) {
-      try {
-        const txDoc = await getDoc(doc(db, "users", currentUser.uid, "transactions", txId));
-        if (txDoc.exists()) {
-          const tx = txDoc.data();
-          editTxId.value = txId;
-          editType.value = tx.type;
-          editAmount.value = tx.amount;
-          editDate.value = tx.date || getCurrentDate();
-          editDescription.value = tx.description;
-          editCategory.value = tx.category;
-          editRecurring.checked = tx.recurring;
-          editRecurringOptions.style.display = tx.recurring ? "block" : "none";
-          if(tx.recurring) {
-            editRecurringInterval.value = tx.recurringInterval;
-          }
-          editTransactionModal.show();
-        }
-      } catch (error) {
-        showToast("লেনদেন লোড করতে সমস্যা: " + error.message, "danger");
-      }
-    }
-
-    editTransactionForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const txId = editTxId.value;
-      const updatedTx = {
-        type: editType.value,
-        amount: parseFloat(editAmount.value),
-        date: editDate.value,
-        description: editDescription.value,
-        category: editCategory.value,
-        recurring: editRecurring.checked,
-        recurringInterval: editRecurring.checked ? editRecurringInterval.value : ""
-      };
-      try {
-        await updateDoc(doc(db, "users", currentUser.uid, "transactions", txId), updatedTx);
-        editTransactionModal.hide();
-        showToast("লেনদেন সফলভাবে আপডেট হয়েছে", "success");
-      } catch (error) {
-        showToast("আপডেট করতে সমস্যা: " + error.message, "danger");
-      }
-    });
-
-    function loadTransactions() {
-      const q = query(collection(db, "users", currentUser.uid, "transactions"), orderBy("date", "desc"));
-      onSnapshot(q, (snapshot) => {
-        transactionsData = [];
-        transactionTableBody.innerHTML = "";
-        let totalIncome = 0, totalExpense = 0;
-        snapshot.forEach(docSnap => {
-          const tx = docSnap.data();
-          tx.id = docSnap.id;
-          transactionsData.push(tx);
-        });
-        renderTransactions(transactionsData);
-        transactionsData.forEach(tx => {
-          if (tx.type === "income") totalIncome += tx.amount;
-          else totalExpense += tx.amount;
-        });
-        totalIncomeEl.textContent = totalIncome;
-        totalExpenseEl.textContent = totalExpense;
-        balanceEl.textContent = totalIncome - totalExpense;
-        currencySymbolEl.textContent = currentCurrency;
-        renderChart(transactionsData);
-      });
-    }
-
-    function renderTransactions(data) {
-      transactionTableBody.innerHTML = "";
-      const searchText = searchInput.value.toLowerCase();
-      const selectedCategory = filterCategory.value;
-      const filteredData = data.filter(tx => {
-        const matchesText = tx.description.toLowerCase().includes(searchText) || tx.category.toLowerCase().includes(searchText);
-        const matchesCategory = selectedCategory ? tx.category === selectedCategory : true;
-        return matchesText && matchesCategory;
-      });
-      filteredData.forEach(tx => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${tx.type === "income" ? "ইনকাম" : "এক্সপেন্স"}</td>
-          <td>${tx.amount} ${tx.currency}</td>
-          <td>${tx.date}</td>
-          <td>${tx.description}</td>
-          <td>${tx.category}</td>
-          <td>
-            <button class="btn btn-sm btn-secondary" onclick="openTransactionOptionsModal('${tx.id}')">⋮</button>
-          </td>
-        `;
-        transactionTableBody.appendChild(tr);
-      });
-    }
-
-    searchInput.addEventListener("input", () => renderTransactions(transactionsData));
-    filterCategory.addEventListener("change", () => renderTransactions(transactionsData));
-
-    exportBtn.addEventListener("click", async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "users", currentUser.uid, "transactions"));
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Type,Amount,Date,Description,Category,Currency,Recurring,RecurringInterval\r\n";
-        snapshot.forEach(docSnap => {
-          const tx = docSnap.data();
-          csvContent += `${tx.type},${tx.amount},${tx.date},${tx.description},${tx.category},${tx.currency},${tx.recurring},${tx.recurringInterval}\r\n`;
-        });
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "transactions.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (error) {
-        showToast("এক্সপোর্ট করতে সমস্যা: " + error.message, "danger");
-      }
-    });
-
-    function renderChart(transactions) {
-      const categoryTotals = {};
-      transactions.forEach(tx => {
-        if (tx.type === "expense") {
-          categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
-        }
-      });
-      const ctx = document.getElementById("expenseChart").getContext("2d");
-      const data = {
-        labels: Object.keys(categoryTotals),
-        datasets: [{
-          label: 'ব্যয়',
-          data: Object.values(categoryTotals),
-          backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff']
-        }]
-      };
-      if (chartInstance) chartInstance.destroy();
-      chartInstance = new Chart(ctx, { type: 'pie', data });
-    }
-
-    document.getElementById("saveSettings").addEventListener("click", () => {
-      currentCurrency = currencySelect.value;
-      localStorage.setItem("currency", currentCurrency);
-      currencySymbolEl.textContent = currentCurrency;
-      currentBudget = budgetInput.value || 0;
-      localStorage.setItem("budget", currentBudget);
-      totalBudgetEl.textContent = currentBudget;
-      currentTheme = themeSelect.value;
-      localStorage.setItem("theme", currentTheme);
-      updateTheme(currentTheme);
-      showToast("সেটিংস সফলভাবে সেভ হয়েছে", "success");
-    });
-
-    function updateTheme(theme) {
-      document.body.classList.remove("theme-light", "theme-dark", "theme-blue", "theme-highcontrast");
-      document.body.classList.add("theme-" + theme);
-    }
-
-    // Default categories array
-    const defaultCategories = ["Food", "Transport", "Entertainment", "Health", "Others", "Utilities", "Shopping", "Education", "Travel", "Savings"];
-
-    function loadCategories() {
-      const categorySelects = [
-        document.getElementById("incomeCategory"),
-        document.getElementById("expenseCategory"),
-        document.getElementById("editCategory")
-      ];
-      // Clear current options
-      categorySelects.forEach(sel => sel.innerHTML = "");
-      filterCategory.innerHTML = `<option value="">সমস্ত ক্যাটাগরি</option>`;
-      const catQuery = query(collection(db, "users", currentUser.uid, "categories"), orderBy("name"));
-      onSnapshot(catQuery, (snapshot) => {
-        categoryList.innerHTML = "";
-        if (snapshot.empty) {
-          // যদি কোন ক্যাটাগরি না থাকে, তাহলে defaultCategories থেকে যোগ করুন
-          defaultCategories.forEach(cat => {
-            addCategoryToFirebase(cat);
-          });
+    async init() {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          this.user = user;
+          this.loadData();
+          document.getElementById('app').style.display = 'block';
+          document.getElementById('loading').style.display = 'none';
         } else {
-          snapshot.forEach(docSnap => {
-            const cat = docSnap.data().name;
-            categorySelects.forEach(sel => {
-              const option = document.createElement("option");
-              option.value = cat;
-              option.textContent = cat;
-              sel.appendChild(option);
-            });
-            const filterOption = document.createElement("option");
-            filterOption.value = cat;
-            filterOption.textContent = cat;
-            filterCategory.appendChild(filterOption);
-            const li = document.createElement("li");
-            li.className = "list-group-item";
-            li.textContent = cat;
-            categoryList.appendChild(li);
-          });
+          this.redirectToLogin();
         }
+      });
+
+      document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+      document.getElementById('transactionForm').addEventListener('submit', (e) => this.addTransaction(e));
+    }
+
+    async loadData() {
+      const q = query(
+        collection(db, "transactions"),
+        where("userId", "==", this.user.uid),
+        orderBy("timestamp", "desc")
+      );
+
+      onSnapshot(q, (snapshot) => {
+        this.transactions = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        this.updateUI();
       });
     }
 
-    addCategoryBtn.addEventListener("click", () => {
-      const newCat = newCategoryInput.value.trim();
-      if (newCat) {
-        addCategoryToFirebase(newCat);
-        newCategoryInput.value = "";
-      } else {
-        alert("দয়া করে একটি বৈধ ক্যাটাগরি লিখুন");
-      }
-    });
-
-    async function addCategoryToFirebase(catName) {
-      if (!currentUser) {
-        alert("ব্যবহারকারী লগ ইন করা নেই। অনুগ্রহ করে লগ ইন করুন।");
-        return;
-      }
+    async addTransaction(e) {
+      e.preventDefault();
       try {
-        await addDoc(collection(db, "users", currentUser.uid, "categories"), { name: catName });
-        showToast("ক্যাটাগরি সফলভাবে যোগ করা হয়েছে: " + catName, "success");
+        await addDoc(collection(db, "transactions"), {
+          type: document.getElementById('type').value,
+          amount: parseFloat(document.getElementById('amount').value),
+          userId: this.user.uid,
+          timestamp: new Date()
+        });
+        document.getElementById('transactionForm').reset();
       } catch (error) {
-        showToast("ক্যাটাগরি যোগ করতে সমস্যা: " + error.message, "danger");
+        console.error("ত্রুটি:", error);
       }
     }
 
-    function showToast(message, type = "info") {
-      const toastContainer = document.getElementById("toastContainer");
-      const toastEl = document.createElement("div");
-      toastEl.className = `toast align-items-center text-bg-${type} border-0 mb-2`;
-      toastEl.role = "alert";
-      toastEl.ariaLive = "assertive";
-      toastEl.ariaAtomic = "true";
-      toastEl.innerHTML = `
-        <div class="d-flex">
-          <div class="toast-body">
-            ${message}
+    updateUI() {
+      // ব্যালেন্স আপডেট
+      const balance = this.transactions.reduce((acc, tx) => 
+        tx.type === 'income' ? acc + tx.amount : acc - tx.amount, 0);
+      document.getElementById('balance').textContent = `৳ ${balance.toLocaleString('bn-BD')}`;
+
+      // লেনদেন তালিকা
+      const container = document.getElementById('transactionContainer');
+      container.innerHTML = this.transactions.map(tx => `
+        <div class="card mb-2 ${tx.type === 'income' ? 'border-success' : 'border-danger'}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6>${tx.type === 'income' ? 'আয়' : 'ব্যয়'}</h6>
+                <small>${new Date(tx.timestamp).toLocaleDateString('bn-BD')}</small>
+              </div>
+              <div>
+                <h5>৳ ${tx.amount.toLocaleString('bn-BD')}</h5>
+              </div>
+            </div>
           </div>
-          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
-      `;
-      toastContainer.appendChild(toastEl);
-      const bsToast = new bootstrap.Toast(toastEl, { delay: 3000 });
-      bsToast.show();
-      toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+      `).join('');
     }
-  </script>
+
+    redirectToLogin() {
+      window.location.href = 'login.html';
+    }
+  }
+
+  // অ্যাপ শুরু করুন
+  window.addEventListener('DOMContentLoaded', () => new FinanceApp());
+</script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
