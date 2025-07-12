@@ -1,248 +1,161 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ডিজিটাল অর্থ ব্যবস্থাপনা</title>
-  
-  <!-- CSS ডিপেন্ডেন্সি -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>লগইন / সাইনআপ</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
-    :root {
-      --primary: #4361ee;
-      --danger: #ef476f;
-      --success: #06d6a0;
+    body {
+      font-family: 'Hind Siliguri', sans-serif;
+      background: #e0f2f1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
     }
-
-    .loader {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid var(--primary);
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
     }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    h2 {
+      text-align: center;
+      color: #2c5f2d;
+      margin-bottom: 20px;
     }
-
-    .transaction-card {
-      transition: transform 0.2s;
+    .form-group {
+      margin-bottom: 15px;
     }
-    .transaction-card:hover {
-      transform: translateY(-5px);
+    input {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 30px;
+      border: 1px solid #ccc;
+      outline: none;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 30px;
+      background: #2c5f2d;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #3d8b3d;
+    }
+    .error, .success {
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
+    }
+    .error {
+      background: #ffcdd2;
+      color: #b71c1c;
+    }
+    .success {
+      background: #c8e6c9;
+      color: #1b5e20;
     }
   </style>
 </head>
-<body class="bg-light">
-
-<!-- লোডিং স্ক্রিন -->
-<div id="loading" class="vh-100 d-flex justify-content-center align-items-center">
-  <div class="loader"></div>
-</div>
-
-<!-- মেইন অ্যাপ -->
-<div id="app" style="display: none;">
-  <!-- নেভবার -->
-  <nav class="navbar navbar-expand-lg bg-primary text-white shadow">
-    <div class="container-fluid">
-      <h4 class="mb-0">
-        <i class="mdi mdi-finance"></i> অর্থ ব্যবস্থাপনা
-      </h4>
-      <button id="logoutBtn" class="btn btn-light">
-        <i class="mdi mdi-logout"></i> লগআউট
+<body>
+  <div class="box">
+    <h2>লগইন / সাইনআপ</h2>
+    <form id="authForm">
+      <div class="form-group">
+        <input type="email" id="email" placeholder="ইমেইল" required />
+      </div>
+      <div class="form-group">
+        <input type="password" id="password" placeholder="পাসওয়ার্ড" required />
+      </div>
+      <button type="submit" id="authBtn">
+        <i class="fas fa-sign-in-alt"></i> প্রবেশ করুন / সাইনআপ করুন
       </button>
-    </div>
-  </nav>
-
-  <div class="container mt-4">
-    <!-- ব্যালেন্স কার্ড -->
-    <div class="row mb-4">
-      <div class="col-md-6 mx-auto">
-        <div class="card shadow border-0 bg-white">
-          <div class="card-body text-center">
-            <h5 class="text-muted">মোট ব্যালেন্স</h5>
-            <h1 id="totalBalance" class="display-4 text-primary">৳ 0</h1>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- লেনদেন ফর্ম -->
-    <div class="card shadow mb-4">
-      <div class="card-body">
-        <form id="transactionForm">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">ধরন</label>
-              <select id="txType" class="form-select">
-                <option value="income">আয়</option>
-                <option value="expense">ব্যয়</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">পরিমাণ</label>
-              <input type="number" id="txAmount" class="form-control" required>
-            </div>
-            <div class="col-12">
-              <button type="submit" class="btn btn-primary w-100">
-                <i class="mdi mdi-plus"></i> যোগ করুন
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- লেনদেন তালিকা -->
-    <div class="card shadow">
-      <div class="card-body">
-        <h5 class="card-title mb-4">
-          <i class="mdi mdi-history"></i> লেনদেনের ইতিহাস
-        </h5>
-        <div id="transactionList"></div>
-      </div>
-    </div>
+    </form>
+    <div class="error" id="errorBox"></div>
+    <div class="success" id="successBox"></div>
   </div>
-</div>
 
-<!-- Firebase সেটআপ -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { 
-    getAuth, 
-    signOut, 
-    onAuthStateChanged,
-    GoogleAuthProvider
-  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-  import { 
-    getFirestore, 
-    collection, 
-    addDoc, 
-    query, 
-    where, 
-    orderBy, 
-    onSnapshot 
-  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+  <script>
+    // ✅ Supabase Initialization (must be on top)
+    const SUPABASE_URL = "https://ebnktykkwsktbeyooqfr.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVibmt0eWtrd3NrdGJleW9vcWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzNDAxNTgsImV4cCI6MjA2NzkxNjE1OH0.trdyRL6Z9_pZLMVI_gfjrkjXNV5mPWieKZfSbD-O19U";
 
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyD2VUTPioN2WyWfVLML1YxQho6NL4rkc5I",
-  authDomain: "my-app-a5b52.firebaseapp.com",
-  projectId: "my-app-a5b52",
-  storageBucket: "my-app-a5b52.firebasestorage.app",
-  messagingSenderId: "213828908146",
-  appId: "1:213828908146:web:3a4bca5a8393a7151d3eeb",
-  measurementId: "G-RX02N4FEEH"
-};
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // Firebase ইনিশিয়ালাইজেশন
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+    const form = document.getElementById("authForm");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const errorBox = document.getElementById("errorBox");
+    const successBox = document.getElementById("successBox");
+    const authBtn = document.getElementById("authBtn");
 
-  class FinanceApp {
-    constructor() {
-      this.transactions = [];
-      this.init();
+    function showError(msg) {
+      errorBox.innerText = msg;
+      errorBox.style.display = "block";
+      successBox.style.display = "none";
     }
 
-    async init() {
-      // অথেন্টিকেশন স্টেট ট্র্যাক করুন
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          console.log("User logged in:", user.uid);
-          this.user = user;
-          this.loadTransactions();
-          document.getElementById('app').style.display = 'block';
-          document.getElementById('loading').style.display = 'none';
-        } else {
-          window.location.href = 'login.html';
-        }
-      });
-
-      // লগআউট বাটন
-      document.getElementById('logoutBtn').addEventListener('click', () => {
-        signOut(auth);
-      });
-
-      // লেনদেন ফর্ম সাবমিট
-      document.getElementById('transactionForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.addTransaction();
-      });
+    function showSuccess(msg) {
+      successBox.innerText = msg;
+      successBox.style.display = "block";
+      errorBox.style.display = "none";
     }
 
-    async loadTransactions() {
-      const q = query(
-        collection(db, "transactions"),
-        where("userId", "==", this.user.uid),
-        orderBy("timestamp", "desc")
-      );
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
 
-      onSnapshot(q, (snapshot) => {
-        this.transactions = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        this.updateUI();
-      });
-    }
-
-    async addTransaction() {
-      try {
-        const txData = {
-          type: document.getElementById('txType').value,
-          amount: parseFloat(document.getElementById('txAmount').value),
-          userId: this.user.uid,
-          timestamp: new Date()
-        };
-
-        await addDoc(collection(db, "transactions"), txData);
-        document.getElementById('transactionForm').reset();
-      } catch (error) {
-        console.error("ত্রুটি:", error);
+      if (!email || !password) {
+        showError("ইমেইল ও পাসওয়ার্ড পূরণ করুন");
+        return;
       }
-    }
 
-    updateUI() {
-      // ব্যালেন্স আপডেট
-      const balance = this.transactions.reduce((acc, tx) => {
-        return tx.type === 'income' ? acc + tx.amount : acc - tx.amount;
-      }, 0);
-      document.getElementById('totalBalance').textContent = `৳ ${balance.toLocaleString('bn-BD')}`;
+      authBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> অপেক্ষা করুন...`;
+      authBtn.disabled = true;
 
-      // লেনদেন তালিকা
-      const container = document.getElementById('transactionList');
-      container.innerHTML = this.transactions.map(tx => `
-        <div class="card transaction-card mb-3 ${tx.type === 'income' ? 'border-success' : 'border-danger'}">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-0">${tx.type === 'income' ? '💰 আয়' : '💸 ব্যয়'}</h6>
-                <small class="text-muted">${new Date(tx.timestamp).toLocaleDateString('bn-BD')}</small>
-              </div>
-              <div>
-                <h4 class="mb-0 ${tx.type === 'income' ? 'text-success' : 'text-danger'}">
-                  ৳ ${tx.amount.toLocaleString('bn-BD')}
-                </h4>
-              </div>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-  }
+      try {
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
 
-  // অ্যাপ শুরু করুন
-  window.financeApp = new FinanceApp();
-</script>
+        if (loginError) {
+          if (loginError.message.includes("Invalid login credentials")) {
+            const { data: signupData, error: signupError } = await supabase.auth.signUp({ email, password });
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            if (signupError) {
+              showError("সাইনআপ ব্যর্থ: " + signupError.message);
+            } else {
+              showSuccess("সাইনআপ সফল! অনুগ্রহ করে ইমেইল যাচাই করুন।");
+            }
+          } else {
+            showError("ত্রুটি: " + loginError.message);
+          }
+        } else {
+          showSuccess("লগইন সফল! ড্যাশবোর্ডে নেওয়া হচ্ছে...");
+          setTimeout(() => {
+            window.location.href = "dashboard.html";
+          }, 1500);
+        }
+
+      } catch (err) {
+        showError("সার্ভার ত্রুটি: " + err.message);
+      }
+
+      authBtn.innerHTML = `<i class="fas fa-sign-in-alt"></i> প্রবেশ করুন / সাইনআপ করুন`;
+      authBtn.disabled = false;
+    });
+  </script>
 </body>
 </html>
