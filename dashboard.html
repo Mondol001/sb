@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -9,7 +8,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <style>
-        /* CSS স্টাইলগুলি পূর্বের মতোই রাখুন */
         :root {
             --primary: #2c5f2d;
             --primary-light: #3d8b3d;
@@ -54,6 +52,7 @@
             color: white;
             padding: 15px 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative;
         }
         
         .header-content {
@@ -112,25 +111,55 @@
             color: var(--primary);
         }
         
-        /* Main Content */
-        .dashboard {
+        /* Hamburger Menu */
+        .hamburger-menu {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 100;
+            background: white;
+            color: var(--primary);
+            border-radius: 8px;
+            width: 50px;
+            height: 50px;
             display: flex;
-            gap: 30px;
-            margin-top: 30px;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            cursor: pointer;
         }
         
         /* Sidebar */
         .sidebar {
             width: 280px;
-            background: var(--card-bg);
-            border-radius: 15px;
-            box-shadow: var(--material-shadow);
+            background: var(--sidebar-bg);
+            color: var(--text-light);
+            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            z-index: 99;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .sidebar-header {
+            background: rgba(0,0,0,0.2);
             padding: 20px;
-            height: fit-content;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         
         .folder-tree {
-            margin-top: 20px;
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
         }
         
         .tree-item {
@@ -144,38 +173,43 @@
         }
         
         .tree-item:hover {
-            background-color: rgba(44, 95, 45, 0.1);
+            background-color: rgba(255,255,255,0.1);
         }
         
         .tree-item.active {
-            background-color: var(--primary);
-            color: white;
+            background-color: var(--primary-light);
         }
         
         .tree-item i {
             margin-right: 10px;
-            color: var(--accent);
+            color: var(--secondary);
         }
         
         .add-folder-form {
-            margin-top: 20px;
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
         
-        .form-group {
-            margin-bottom: 15px;
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 98;
+            display: none;
         }
         
-        .form-control {
-            width: 100%;
-            padding: 10px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            transition: all 0.3s;
+        .sidebar-overlay.active {
+            display: block;
         }
         
-        .form-control:focus {
-            border-color: var(--primary);
-            outline: none;
+        /* Main Content */
+        .dashboard {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
         }
         
         /* Main Content */
@@ -185,6 +219,12 @@
             border-radius: 15px;
             box-shadow: var(--material-shadow);
             padding: 30px;
+            margin-left: 0;
+            transition: margin 0.3s ease;
+        }
+        
+        .main-content.sidebar-open {
+            margin-left: 300px;
         }
         
         .content-header {
@@ -283,12 +323,10 @@
         
         .map-container {
             height: 150px;
-            background: #eaf4ea;
             border-radius: 8px;
             overflow: hidden;
             position: relative;
             margin-top: 15px;
-            background: linear-gradient(45deg, #eaf4ea, #d4e8d4);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -306,6 +344,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        /* Google Map */
+        .google-map {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
         
         /* Modal Styles */
@@ -466,6 +511,10 @@
             .sidebar {
                 width: 100%;
             }
+            
+            .main-content.sidebar-open {
+                margin-left: 0;
+            }
         }
         
         @media (max-width: 768px) {
@@ -559,6 +608,33 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
     
+    <!-- Hamburger Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <i class="fas fa-bars"></i>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-folder-tree"></i> ফোল্ডার</h3>
+        </div>
+        <div class="folder-tree" id="folderTree">
+            <!-- Folders will be loaded dynamically -->
+        </div>
+        
+        <div class="add-folder-form">
+            <div class="form-group">
+                <input type="text" id="newFolderName" class="form-control" placeholder="নতুন ফোল্ডারের নাম">
+            </div>
+            <button id="addFolderBtn" class="btn btn-primary w-100">
+                <i class="fas fa-plus"></i> ফোল্ডার যোগ করুন
+            </button>
+        </div>
+    </div>
+    
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
     <!-- Main App -->
     <div id="appContainer">
         <!-- Header -->
@@ -591,25 +667,8 @@
             </div>
             
             <div class="dashboard">
-                <!-- Sidebar -->
-                <div class="sidebar">
-                    <h3><i class="fas fa-folder-tree"></i> ফোল্ডার</h3>
-                    <div class="folder-tree" id="folderTree">
-                        <!-- Folders will be loaded dynamically -->
-                    </div>
-                    
-                    <div class="add-folder-form">
-                        <div class="form-group">
-                            <input type="text" id="newFolderName" class="form-control" placeholder="নতুন ফোল্ডারের নাম">
-                        </div>
-                        <button id="addFolderBtn" class="btn btn-primary w-100">
-                            <i class="fas fa-plus"></i> ফোল্ডার যোগ করুন
-                        </button>
-                    </div>
-                </div>
-                
                 <!-- Main Content -->
-                <div class="main-content">
+                <div class="main-content" id="mainContent">
                     <div class="content-header">
                         <h3><i class="fas fa-folder-open"></i> <span id="currentFolder">সকল জমি রেকর্ড</span></h3>
                         <button id="addLandBtn" class="btn btn-primary">
@@ -809,6 +868,10 @@
         const uploadArea = document.getElementById('uploadArea');
         const documentUpload = document.getElementById('documentUpload');
         const documentGrid = document.getElementById('documentGrid');
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mainContent = document.getElementById('mainContent');
         
         // App State
         let currentUser = null;
@@ -817,6 +880,8 @@
         let lands = [];
         let folders = [];
         let supabaseClient = null;
+        let map = null;
+        let marker = null;
 
         // Initialize the application
         async function initApp() {
@@ -847,14 +912,36 @@
                 await loadFolders();
                 await loadLands();
                 await loadStats();
+                
+                // Load Google Maps API
+                loadGoogleMaps();
             } catch (error) {
                 console.error("Initialization error:", error);
                 showToast('অ্যাপ্লিকেশন শুরু করতে সমস্যা হয়েছে', 'danger');
             }
         }
         
+        // Load Google Maps API
+        function loadGoogleMaps() {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+        
+        // Initialize map (will be called by Google Maps API)
+        window.initMap = function() {
+            // This function will be called when Google Maps API is loaded
+            console.log("Google Maps API loaded");
+        }
+        
         // Setup event listeners
         function setupEventListeners() {
+            // Hamburger menu
+            hamburgerMenu.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', closeSidebar);
+            
             // Logout
             logoutBtn.addEventListener('click', async () => {
                 const { error } = await supabaseClient.auth.signOut();
@@ -889,6 +976,20 @@
             // Document upload
             uploadArea.addEventListener('click', () => documentUpload.click());
             documentUpload.addEventListener('change', uploadDocuments);
+        }
+        
+        // Toggle sidebar
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+            mainContent.classList.toggle('sidebar-open');
+        }
+        
+        // Close sidebar
+        function closeSidebar() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            mainContent.classList.remove('sidebar-open');
         }
         
         // Load folders from Supabase
@@ -927,6 +1028,7 @@
                 currentFolderId = 0;
                 loadLands();
                 updateActiveFolder(allLandsItem);
+                closeSidebar();
             });
             folderTree.appendChild(allLandsItem);
             
@@ -942,6 +1044,7 @@
                     currentFolderId = folder.id;
                     loadLands();
                     updateActiveFolder(folderItem);
+                    closeSidebar();
                 });
                 folderTree.appendChild(folderItem);
             });
@@ -1028,7 +1131,6 @@
                             </div>
                         </div>
                         <div class="map-container mt-3 position-relative">
-                            <i class="fas fa-map-marked-alt fa-3x" style="color: #4b8e8d;"></i>
                             <div class="map-overlay">
                                 <button class="btn btn-land view-land-details" data-id="${land.id}">
                                     <i class="fas fa-info-circle me-2"></i>
@@ -1077,11 +1179,51 @@
                 dashboardView.style.display = 'none';
                 landDetailsView.style.display = 'block';
                 
+                // Initialize Google Map
+                if (data.coordinates) {
+                    initMapForLand(data.coordinates);
+                }
+                
                 await loadDocuments(landId);
             } catch (error) {
                 console.error('Land details failed:', error);
                 showToast('জমির বিবরণ লোড করতে সমস্যা হয়েছে', 'danger');
             }
+        }
+        
+        // Initialize Google Map for land
+        function initMapForLand(coordinates) {
+            // Parse coordinates
+            const [lat, lng] = coordinates.split(',').map(coord => parseFloat(coord.trim()));
+            
+            if (isNaN(lat) || isNaN(lng)) {
+                console.error('Invalid coordinates:', coordinates);
+                return;
+            }
+            
+            // Create map container
+            const mapContainer = document.createElement('div');
+            mapContainer.className = 'google-map';
+            mapContainer.id = 'googleMap';
+            mapContainer.style.height = '300px';
+            
+            // Add map to the location section
+            const locationSection = document.querySelector('.land-property:nth-child(1)');
+            locationSection.appendChild(mapContainer);
+            
+            // Initialize map
+            const map = new google.maps.Map(mapContainer, {
+                center: { lat, lng },
+                zoom: 15,
+                mapTypeId: 'satellite'
+            });
+            
+            // Add marker
+            new google.maps.Marker({
+                position: { lat, lng },
+                map: map,
+                title: 'জমির অবস্থান'
+            });
         }
         
         // Load documents for a land
@@ -1129,13 +1271,29 @@
                 else if (doc.file_type && doc.file_type.includes('pdf')) icon = 'fa-file-pdf';
                 else if (doc.file_type && doc.file_type.includes('word')) icon = 'fa-file-word';
                 
+                // Get document URL
+                const { publicURL } = supabaseClient
+                    .storage
+                    .from('land_documents')
+                    .getPublicUrl(doc.file_path);
+                
                 docCard.innerHTML = `
                     <div class="document-preview">
-                        <i class="fas ${icon}"></i>
+                        ${doc.file_type.includes('image') ? 
+                            `<img src="${publicURL}" alt="Document Preview" style="max-height: 100%; max-width: 100%;">` : 
+                            `<i class="fas ${icon} fa-3x text-primary"></i>`}
                     </div>
                     <div class="document-info">
                         <div class="text-truncate">${doc.file_name}</div>
-                        <small>${doc.created_at ? new Date(doc.created_at).toLocaleDateString('bn-BD') : '-'}</small>
+                        <div class="d-flex justify-content-between mt-2">
+                            <a href="${publicURL}" target="_blank" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> দেখুন
+                            </a>
+                            <a href="${publicURL}" download="${doc.file_name}" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-download"></i> ডাউনলোড
+                            </a>
+                        </div>
+                        <small class="d-block mt-2">${doc.created_at ? new Date(doc.created_at).toLocaleDateString('bn-BD') : '-'}</small>
                     </div>
                 `;
                 
@@ -1156,7 +1314,10 @@
                     // Upload file to Supabase storage
                     const { error: uploadError } = await supabaseClient.storage
                         .from('land_documents')
-                        .upload(filePath, file);
+                        .upload(filePath, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
                     
                     if (uploadError) {
                         console.error('Upload error:', uploadError);
