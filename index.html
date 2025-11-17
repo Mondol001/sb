@@ -647,7 +647,7 @@
                         <div class="template-options">
                             <div class="template-option active" data-template="expiry">
                                 <strong>মেয়াদ শেষ হওয়ার রিমাইন্ডার</strong>
-                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগের মেয়াদ শেষ হতে আর মাত্র ৫ দিন বাকি আছে। দয়া করে সংযোগ নবায়ন করুন।</div>
+                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগের মেয়াদ শেষ হতে যাচ্ছে। দয়া করে সংযোগ নবায়ন করুন।</div>
                             </div>
                             <div class="template-option" data-template="expired">
                                 <strong>মেয়াদ শেষ হয়ে গেছে</strong>
@@ -655,11 +655,11 @@
                             </div>
                             <div class="template-option" data-template="connection">
                                 <strong>সংযোগ সক্রিয়</strong>
-                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগ সফলভাবে সক্রিয় করা হয়েছে। ধন্যবাদ।</div>
+                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগ সফলভাবে সক্রিয় করা হয়েছে।</div>
                             </div>
                             <div class="template-option" data-template="renewal">
                                 <strong>সংযোগ নবায়ন</strong>
-                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগ সফলভাবে নবায়ন করা হয়েছে। ব্যবহারের জন্য ধন্যবাদ।</div>
+                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগ সফলভাবে নবায়ন করা হয়েছে।</div>
                             </div>
                             <div class="template-option" data-template="custom">
                                 <strong>কাস্টম মেসেজ</strong>
@@ -875,22 +875,19 @@
             let message = '';
             const user = currentSmsUser;
             const endDate = formatDate(user.endDate);
-            const today = new Date();
-            const endDateTime = new Date(user.endDate);
-            const daysUntilExpiry = Math.ceil((endDateTime - today) / (1000 * 60 * 60 * 24));
             
             switch(currentTemplate) {
                 case 'expiry':
-                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগের মেয়াদ ${endDate} তারিখে শেষ হতে যাচ্ছে। দয়া করে সংযোগ নবায়ন করুন।\n\nইউজার আইডি: ${user.userId}\nকন্ট্রাক্ট নং: MWZ-2023\nযোগাযোগ: 01841246223\nমোহাম্মদ ইয়াকুব হোসেন\nMondol WiFi Zone`;
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগের মেয়াদ ${endDate} তারিখে শেষ হতে যাচ্ছে। দয়া করে সংযোগ নবায়ন করুন। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
                     break;
                 case 'expired':
-                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগের মেয়াদ শেষ হয়ে গেছে। দয়া করে দ্রুত সংযোগ নবায়ন করুন।\n\nইউজার আইডি: ${user.userId}\nকন্ট্রাক্ট নং: MWZ-2023\nযোগাযোগ: 01841246223\nমোহাম্মদ ইয়াকুব হোসেন\nMondol WiFi Zone`;
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগের মেয়াদ ${endDate} তারিখে শেষ হয়ে গেছে। দয়া করে দ্রুত সংযোগ নবায়ন করুন। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
                     break;
                 case 'connection':
-                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগ সফলভাবে সক্রিয় করা হয়েছে। ${endDate} তারিখ পর্যন্ত ব্যবহার করতে পারবেন।\n\nইউজার আইডি: ${user.userId}\nকন্ট্রাক্ট নং: MWZ-2023\nযোগাযোগ: 01841246223\nমোহাম্মদ ইয়াকুব হোসেন\nMondol WiFi Zone`;
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগ সফলভাবে সক্রিয় করা হয়েছে। ${endDate} তারিখ পর্যন্ত ব্যবহার করতে পারবেন। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
                     break;
                 case 'renewal':
-                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগ সফলভাবে নবায়ন করা হয়েছে। নতুন মেয়াদ ${endDate} তারিখ পর্যন্ত।\n\nইউজার আইডি: ${user.userId}\nকন্ট্রাক্ট নং: MWZ-2023\nযোগাযোগ: 01841246223\nমোহাম্মদ ইয়াকুব হোসেন\nMondol WiFi Zone`;
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগ সফলভাবে নবায়ন করা হয়েছে। নতুন মেয়াদ ${endDate} তারিখ পর্যন্ত। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
                     break;
                 case 'custom':
                     message = '';
