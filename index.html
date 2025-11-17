@@ -68,18 +68,6 @@
             padding: 2rem;
         }
         
-        .user-card {
-            border-left: 4px solid var(--primary-color);
-        }
-        
-        .expiring-soon {
-            border-left: 4px solid var(--warning-color);
-        }
-        
-        .expired {
-            border-left: 4px solid var(--danger-color);
-        }
-        
         .stats-card {
             text-align: center;
             padding: 1.5rem;
@@ -170,6 +158,15 @@
             z-index: 1050;
             min-width: 300px;
         }
+        
+        .debug-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -208,6 +205,12 @@
                 </div>
                 
                 <div id="login-message" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                
+                <!-- Debug Info -->
+                <div class="debug-info mt-3">
+                    <strong>Debug Info:</strong>
+                    <div id="debug-status">Not connected to Firebase</div>
+                </div>
             </div>
         </div>
     </div>
@@ -228,18 +231,12 @@
                         <li class="nav-item">
                             <a class="nav-link active" href="#"><i class="fas fa-home me-1"></i> Dashboard</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" id="users-tab"><i class="fas fa-users me-1"></i> Users</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" id="sms-tab"><i class="fas fa-sms me-1"></i> SMS</a>
-                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-user me-1"></i> <span id="user-email"></span>
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                                <li><a class="dropdown-item" href="#" id="debug-toggle"><i class="fas fa-bug me-2"></i> Debug Info</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
                             </ul>
@@ -268,6 +265,29 @@
 
         <!-- Main Content -->
         <div class="container">
+            <!-- Debug Panel -->
+            <div id="debug-panel" class="card mb-4 d-none">
+                <div class="card-header bg-warning">
+                    <h5 class="card-title mb-0"><i class="fas fa-bug me-2"></i>Debug Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Firebase Status</h6>
+                            <div id="firebase-status">Checking...</div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>User Data</h6>
+                            <div id="user-data">No data</div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-sm btn-outline-primary" id="test-connection">Test Firestore Connection</button>
+                        <button class="btn btn-sm btn-outline-secondary" id="clear-debug">Clear Debug</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Loading Spinner -->
             <div id="loading-spinner" class="loading-spinner">
                 <div class="spinner-border text-primary" role="status">
@@ -316,9 +336,14 @@
             <div class="card">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0"><i class="fas fa-users me-2"></i>User Management</h5>
-                    <button class="btn btn-sm btn-outline-primary" id="refresh-users">
-                        <i class="fas fa-sync-alt me-1"></i> Refresh
-                    </button>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" id="refresh-users">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" id="view-all-data">
+                            <i class="fas fa-database me-1"></i> View All Data
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -336,7 +361,7 @@
                                 </tr>
                             </thead>
                             <tbody id="users-table-body">
-                                <tr id="no-users-row" class="d-none">
+                                <tr id="no-users-row">
                                     <td colspan="8" class="text-center py-4 text-muted">
                                         <i class="fas fa-users fa-2x mb-3"></i>
                                         <p>No users found. Add your first user to get started.</p>
@@ -495,6 +520,24 @@
         </div>
     </div>
 
+    <!-- All Data Modal -->
+    <div class="modal fade" id="allDataModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">All User Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="all-data-content" class="p-3 bg-light rounded" style="max-height: 400px; overflow-y: auto;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase and App Script -->
     <script>
         // Firebase configuration
@@ -509,9 +552,20 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        let app;
+        let auth;
+        let db;
+        
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            document.getElementById('debug-status').textContent = 'Firebase initialized successfully';
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            document.getElementById('debug-status').textContent = 'Firebase initialization error: ' + error.message;
+            console.error('Firebase initialization error:', error);
+        }
 
         // DOM Elements
         const loginSection = document.getElementById('login-section');
@@ -534,6 +588,15 @@
         const userEmailSpan = document.getElementById('user-email');
         const alertMessage = document.getElementById('alert-message');
         const alertText = document.getElementById('alert-text');
+        const debugToggle = document.getElementById('debug-toggle');
+        const debugPanel = document.getElementById('debug-panel');
+        const firebaseStatus = document.getElementById('firebase-status');
+        const userData = document.getElementById('user-data');
+        const testConnectionBtn = document.getElementById('test-connection');
+        const clearDebugBtn = document.getElementById('clear-debug');
+        const viewAllDataBtn = document.getElementById('view-all-data');
+        const allDataModal = document.getElementById('allDataModal');
+        const allDataContent = document.getElementById('all-data-content');
         
         // Stats elements
         const totalUsersEl = document.getElementById('total-users');
@@ -566,6 +629,22 @@
             }, 5000);
         }
 
+        // Update debug information
+        function updateDebugInfo() {
+            if (!currentUser) {
+                firebaseStatus.textContent = 'No user logged in';
+                userData.textContent = 'No user data';
+                return;
+            }
+            
+            firebaseStatus.textContent = `User: ${currentUser.email} (${currentUser.uid})`;
+            userData.textContent = `Total users in collection: ${users.length}`;
+            
+            // Log to console for debugging
+            console.log('Current user:', currentUser);
+            console.log('Users in collection:', users);
+        }
+
         // Authentication state observer
         auth.onAuthStateChanged((user) => {
             if (user) {
@@ -573,6 +652,8 @@
                 userEmailSpan.textContent = user.email;
                 showDashboard();
                 loadUsers();
+                updateDebugInfo();
+                showAlert('Successfully signed in!', 'success');
             } else {
                 showLogin();
             }
@@ -588,7 +669,6 @@
                 .then((userCredential) => {
                     // Signed in
                     loginMessage.classList.add('d-none');
-                    showAlert('Successfully signed in!', 'success');
                 })
                 .catch((error) => {
                     loginMessage.textContent = error.message;
@@ -611,7 +691,6 @@
                 .then((userCredential) => {
                     // Signed up
                     loginMessage.classList.add('d-none');
-                    showAlert('Account created successfully!', 'success');
                 })
                 .catch((error) => {
                     loginMessage.textContent = error.message;
@@ -628,6 +707,52 @@
         // Refresh users button
         refreshUsersBtn.addEventListener('click', () => {
             loadUsers();
+        });
+
+        // Debug toggle
+        debugToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            debugPanel.classList.toggle('d-none');
+        });
+
+        // Test connection button
+        testConnectionBtn.addEventListener('click', () => {
+            if (!currentUser) {
+                showAlert('Please log in first', 'warning');
+                return;
+            }
+            
+            // Test Firestore connection by adding a test document
+            const testRef = db.collection('testConnection').doc(currentUser.uid);
+            testRef.set({
+                testTime: new Date().toISOString(),
+                userId: currentUser.uid
+            })
+            .then(() => {
+                showAlert('Firestore connection test successful!', 'success');
+                return testRef.get();
+            })
+            .then((doc) => {
+                if (doc.exists) {
+                    userData.textContent = `Test successful: ${doc.data().testTime}`;
+                }
+            })
+            .catch((error) => {
+                showAlert('Firestore connection test failed: ' + error.message, 'danger');
+                console.error('Firestore test error:', error);
+            });
+        });
+
+        // Clear debug button
+        clearDebugBtn.addEventListener('click', () => {
+            userData.textContent = 'Cleared';
+        });
+
+        // View all data button
+        viewAllDataBtn.addEventListener('click', () => {
+            allDataContent.textContent = JSON.stringify(users, null, 2);
+            const modal = new bootstrap.Modal(allDataModal);
+            modal.show();
         });
 
         // Date calculation for add user form
@@ -703,7 +828,8 @@
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 userId: currentUser.uid
             })
-            .then(() => {
+            .then((docRef) => {
+                console.log('User added with ID: ', docRef.id);
                 // Close modal and reset form
                 bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
                 addUserForm.reset();
@@ -833,29 +959,39 @@
 
         // Function to load users from Firestore
         function loadUsers() {
+            if (!currentUser) {
+                console.error('No user logged in');
+                return;
+            }
+            
             loadingSpinner.style.display = 'block';
             usersTableBody.innerHTML = '';
-            noUsersRow.classList.add('d-none');
+            noUsersRow.classList.remove('d-none');
             
             // Clear any existing listeners
             if (usersListener) {
                 usersListener();
             }
             
+            console.log('Loading users for user:', currentUser.uid);
+            
             usersListener = db.collection('users')
                 .where('userId', '==', currentUser.uid)
-                .orderBy('createdAt', 'desc')
                 .onSnapshot((snapshot) => {
                     users = [];
                     usersTableBody.innerHTML = '';
                     let totalAmount = 0;
                     
                     if (snapshot.empty) {
+                        console.log('No users found in Firestore');
                         noUsersRow.classList.remove('d-none');
                         loadingSpinner.style.display = 'none';
                         updateStats(totalAmount);
+                        updateDebugInfo();
                         return;
                     }
+                    
+                    console.log(`Found ${snapshot.size} users in Firestore`);
                     
                     snapshot.forEach((doc) => {
                         const userData = doc.data();
@@ -870,10 +1006,12 @@
                     
                     loadingSpinner.style.display = 'none';
                     updateStats(totalAmount);
+                    updateDebugInfo();
                 }, (error) => {
                     console.error('Error fetching users:', error);
                     loadingSpinner.style.display = 'none';
-                    showAlert('Error loading users. Please try again.', 'danger');
+                    showAlert('Error loading users: ' + error.message, 'danger');
+                    updateDebugInfo();
                 });
         }
 
@@ -1019,11 +1157,7 @@
             startDateInput.value = todayFormatted;
             updateEndDate();
             
-            // Initialize tooltips
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
+            console.log('App initialized');
         });
     </script>
 </body>
