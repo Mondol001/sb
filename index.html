@@ -93,12 +93,13 @@
         }
         
         .action-btn {
-            margin: 0 5px;
+            margin: 0 2px;
         }
         
         .table-responsive {
             border-radius: 10px;
-            overflow: hidden;
+            overflow: auto;
+            max-height: 600px;
         }
         
         .status-badge {
@@ -141,8 +142,9 @@
             border-left: 4px solid var(--primary-color);
             padding: 15px;
             border-radius: 5px;
-            font-family: monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             white-space: pre-wrap;
+            line-height: 1.5;
         }
         
         .loading-spinner {
@@ -159,13 +161,68 @@
             min-width: 300px;
         }
         
-        .debug-info {
-            background-color: #f8f9fa;
-            border-left: 4px solid #6c757d;
+        .bangla-text {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .template-option {
             padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
-            font-size: 0.85rem;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .template-option:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .template-option.active {
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .filter-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .renew-btn {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #212529;
+        }
+        
+        .renew-btn:hover {
+            background-color: #e0a800;
+            border-color: #e0a800;
+        }
+        
+        .date-display {
+            font-family: monospace;
+            font-weight: 500;
+        }
+        
+        .history-btn {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+        
+        .history-btn:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+        
+        .table-fixed-header {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 10;
         }
     </style>
 </head>
@@ -205,12 +262,6 @@
                 </div>
                 
                 <div id="login-message" class="alert alert-danger mt-3 d-none" role="alert"></div>
-                
-                <!-- Debug Info -->
-                <div class="debug-info mt-3">
-                    <strong>Debug Info:</strong>
-                    <div id="debug-status">Not connected to Firebase</div>
-                </div>
             </div>
         </div>
     </div>
@@ -221,7 +272,7 @@
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
             <div class="container">
                 <a class="navbar-brand" href="#">
-                    <i class="fas fa-wifi me-2"></i>WiFi Zone Management
+                    <i class="fas fa-wifi me-2"></i>Mondol WiFi Zone
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
@@ -236,8 +287,6 @@
                                 <i class="fas fa-user me-1"></i> <span id="user-email"></span>
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" id="debug-toggle"><i class="fas fa-bug me-2"></i> Debug Info</a></li>
-                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
                             </ul>
                         </li>
@@ -251,8 +300,9 @@
             <div class="container">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h1 class="display-5 fw-bold">Welcome to WiFi Zone Management</h1>
+                        <h1 class="display-5 fw-bold">Welcome to Mondol WiFi Zone</h1>
                         <p class="lead">Manage your WiFi users and send SMS notifications</p>
+                        <p class="mb-0">Contact: 01841246223 | Manager: Mohammad Iaqub Hossain</p>
                     </div>
                     <div class="col-md-4 text-end">
                         <button class="btn btn-light btn-lg" data-bs-toggle="modal" data-bs-target="#addUserModal">
@@ -265,29 +315,6 @@
 
         <!-- Main Content -->
         <div class="container">
-            <!-- Debug Panel -->
-            <div id="debug-panel" class="card mb-4 d-none">
-                <div class="card-header bg-warning">
-                    <h5 class="card-title mb-0"><i class="fas fa-bug me-2"></i>Debug Information</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Firebase Status</h6>
-                            <div id="firebase-status">Checking...</div>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>User Data</h6>
-                            <div id="user-data">No data</div>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary" id="test-connection">Test Firestore Connection</button>
-                        <button class="btn btn-sm btn-outline-secondary" id="clear-debug">Clear Debug</button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Loading Spinner -->
             <div id="loading-spinner" class="loading-spinner">
                 <div class="spinner-border text-primary" role="status">
@@ -332,6 +359,34 @@
                 </div>
             </div>
 
+            <!-- Filters Section -->
+            <div class="filter-section">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <label for="status-filter" class="form-label">Status Filter</label>
+                        <select class="form-control" id="status-filter">
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="expiring">Expiring Soon</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label for="start-date-filter" class="form-label">Start Date From</label>
+                        <input type="date" class="form-control" id="start-date-filter">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label for="end-date-filter" class="form-label">End Date From</label>
+                        <input type="date" class="form-control" id="end-date-filter">
+                    </div>
+                    <div class="col-md-3 mb-2 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" id="apply-filters">
+                            <i class="fas fa-filter me-1"></i> Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Users Table -->
             <div class="card">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -340,16 +395,17 @@
                         <button class="btn btn-sm btn-outline-primary" id="refresh-users">
                             <i class="fas fa-sync-alt me-1"></i> Refresh
                         </button>
-                        <button class="btn btn-sm btn-outline-info" id="view-all-data">
-                            <i class="fas fa-database me-1"></i> View All Data
+                        <button class="btn btn-sm btn-outline-secondary" id="reset-filters">
+                            <i class="fas fa-times me-1"></i> Reset Filters
                         </button>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+                        <table class="table table-hover mb-0">
+                            <thead class="table-fixed-header">
                                 <tr>
+                                    <th>ID</th>
                                     <th>Name</th>
                                     <th>Phone</th>
                                     <th>Package</th>
@@ -362,7 +418,7 @@
                             </thead>
                             <tbody id="users-table-body">
                                 <tr id="no-users-row">
-                                    <td colspan="8" class="text-center py-4 text-muted">
+                                    <td colspan="9" class="text-center py-4 text-muted">
                                         <i class="fas fa-users fa-2x mb-3"></i>
                                         <p>No users found. Add your first user to get started.</p>
                                     </td>
@@ -377,8 +433,8 @@
         <!-- Footer -->
         <footer class="mt-5">
             <div class="container text-center">
-                <p>&copy; 2023 WiFi Zone Management System. All rights reserved.</p>
-                <p class="mb-0">Designed for efficient WiFi user management</p>
+                <p>&copy; 2023 Mondol WiFi Zone. All rights reserved.</p>
+                <p class="mb-0">Contact: 01841246223 | Managed by Mohammad Iaqub Hossain</p>
             </div>
         </footer>
     </div>
@@ -393,6 +449,10 @@
                 </div>
                 <div class="modal-body">
                     <form id="add-user-form">
+                        <div class="mb-3">
+                            <label for="user-id" class="form-label">User ID</label>
+                            <input type="text" class="form-control" id="user-id" required>
+                        </div>
                         <div class="mb-3">
                             <label for="user-name" class="form-label">Full Name</label>
                             <input type="text" class="form-control" id="user-name" required>
@@ -411,11 +471,11 @@
                         </div>
                         <div class="mb-3">
                             <label for="package-amount" class="form-label">Package Amount (৳)</label>
-                            <input type="number" class="form-control" id="package-amount" min="0" value="500" required>
+                            <input type="number" class="form-control" id="package-amount" min="0" value="250" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">End Date</label>
-                            <input type="text" class="form-control" id="calculated-end-date" readonly>
+                            <input type="text" class="form-control date-display" id="calculated-end-date" readonly>
                         </div>
                     </form>
                 </div>
@@ -442,6 +502,10 @@
                     <form id="edit-user-form">
                         <input type="hidden" id="edit-user-id">
                         <div class="mb-3">
+                            <label for="edit-user-id-field" class="form-label">User ID</label>
+                            <input type="text" class="form-control" id="edit-user-id-field" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="edit-user-name" class="form-label">Full Name</label>
                             <input type="text" class="form-control" id="edit-user-name" required>
                         </div>
@@ -463,7 +527,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">End Date</label>
-                            <input type="text" class="form-control" id="edit-calculated-end-date" readonly>
+                            <input type="text" class="form-control date-display" id="edit-calculated-end-date" readonly>
                         </div>
                     </form>
                 </div>
@@ -473,6 +537,93 @@
                         <span id="update-user-text">Update User</span>
                         <span id="update-user-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Renew User Modal -->
+    <div class="modal fade" id="renewUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Renew User Package</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="renew-user-form">
+                        <input type="hidden" id="renew-user-id">
+                        <div class="mb-3">
+                            <label class="form-label">User ID</label>
+                            <input type="text" class="form-control" id="renew-user-id-field" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">User Name</label>
+                            <input type="text" class="form-control" id="renew-user-name" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Current End Date</label>
+                            <input type="text" class="form-control date-display" id="renew-current-end-date" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="renew-package-days" class="form-label">Renewal Duration (Days)</label>
+                            <input type="number" class="form-control" id="renew-package-days" min="1" value="30" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="renew-package-amount" class="form-label">Renewal Amount (৳)</label>
+                            <input type="number" class="form-control" id="renew-package-amount" min="0" value="250" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">New End Date</label>
+                            <input type="text" class="form-control date-display" id="renew-calculated-end-date" readonly>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning renew-btn" id="renew-user-btn">
+                        <span id="renew-user-text">Renew Package</span>
+                        <span id="renew-user-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User History Modal -->
+    <div class="modal fade" id="userHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">User History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6 id="history-user-name"></h6>
+                        <p class="mb-1">User ID: <span id="history-user-id"></span></p>
+                        <p class="mb-0">Phone: <span id="history-user-phone"></span></p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Package Days</th>
+                                    <th>Amount</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-history-body">
+                                <!-- History will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -492,47 +643,41 @@
                         <input type="text" class="form-control" id="sms-recipient" readonly>
                     </div>
                     <div class="mb-3">
-                        <label for="sms-template" class="form-label">SMS Template</label>
-                        <select class="form-control" id="sms-template">
-                            <option value="expiry">Expiry Reminder</option>
-                            <option value="custom">Custom Message</option>
-                        </select>
+                        <label class="form-label">SMS Template</label>
+                        <div class="template-options">
+                            <div class="template-option active" data-template="expiry">
+                                <strong>মেয়াদ শেষ হওয়ার রিমাইন্ডার</strong>
+                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগের মেয়াদ শেষ হতে আর মাত্র ৫ দিন বাকি আছে। দয়া করে সংযোগ নবায়ন করুন।</div>
+                            </div>
+                            <div class="template-option" data-template="expired">
+                                <strong>মেয়াদ শেষ হয়ে গেছে</strong>
+                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগের মেয়াদ শেষ হয়ে গেছে। দয়া করে দ্রুত সংযোগ নবায়ন করুন।</div>
+                            </div>
+                            <div class="template-option" data-template="connection">
+                                <strong>সংযোগ সক্রিয়</strong>
+                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগ সফলভাবে সক্রিয় করা হয়েছে। ধন্যবাদ।</div>
+                            </div>
+                            <div class="template-option" data-template="renewal">
+                                <strong>সংযোগ নবায়ন</strong>
+                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগ সফলভাবে নবায়ন করা হয়েছে। ব্যবহারের জন্য ধন্যবাদ।</div>
+                            </div>
+                            <div class="template-option" data-template="custom">
+                                <strong>কাস্টম মেসেজ</strong>
+                                <div class="bangla-text small text-muted">আপনার নিজের মেসেজ লিখুন</div>
+                            </div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="sms-message" class="form-label">Message</label>
-                        <textarea class="form-control" id="sms-message" rows="5"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <div class="sms-template">
-                            <strong>Expiry Reminder Template:</strong>
-                            Dear [Customer Name], your WiFi subscription will expire on [Expiry Date]. Please renew to continue enjoying our services. Thank you.
-                        </div>
+                        <textarea class="form-control bangla-text" id="sms-message" rows="5"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="send-sms-btn">
-                        <span id="send-sms-text">Send SMS</span>
-                        <span id="send-sms-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- All Data Modal -->
-    <div class="modal fade" id="allDataModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">All User Data</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <pre id="all-data-content" class="p-3 bg-light rounded" style="max-height: 400px; overflow-y: auto;"></pre>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#" class="btn btn-primary" id="send-sms-link" target="_blank">
+                        <span id="send-sms-text">Open SMS App</span>
+                        <i class="fas fa-external-link-alt ms-1"></i>
+                    </a>
                 </div>
             </div>
         </div>
@@ -560,10 +705,8 @@
             app = firebase.initializeApp(firebaseConfig);
             auth = firebase.auth();
             db = firebase.firestore();
-            document.getElementById('debug-status').textContent = 'Firebase initialized successfully';
             console.log('Firebase initialized successfully');
         } catch (error) {
-            document.getElementById('debug-status').textContent = 'Firebase initialization error: ' + error.message;
             console.error('Firebase initialization error:', error);
         }
 
@@ -580,23 +723,20 @@
         const saveUserBtn = document.getElementById('save-user-btn');
         const editUserForm = document.getElementById('edit-user-form');
         const updateUserBtn = document.getElementById('update-user-btn');
-        const sendSmsBtn = document.getElementById('send-sms-btn');
-        const smsTemplateSelect = document.getElementById('sms-template');
+        const renewUserBtn = document.getElementById('renew-user-btn');
+        const sendSmsLink = document.getElementById('send-sms-link');
         const smsMessageTextarea = document.getElementById('sms-message');
         const refreshUsersBtn = document.getElementById('refresh-users');
         const loadingSpinner = document.getElementById('loading-spinner');
         const userEmailSpan = document.getElementById('user-email');
         const alertMessage = document.getElementById('alert-message');
         const alertText = document.getElementById('alert-text');
-        const debugToggle = document.getElementById('debug-toggle');
-        const debugPanel = document.getElementById('debug-panel');
-        const firebaseStatus = document.getElementById('firebase-status');
-        const userData = document.getElementById('user-data');
-        const testConnectionBtn = document.getElementById('test-connection');
-        const clearDebugBtn = document.getElementById('clear-debug');
-        const viewAllDataBtn = document.getElementById('view-all-data');
-        const allDataModal = document.getElementById('allDataModal');
-        const allDataContent = document.getElementById('all-data-content');
+        const templateOptions = document.querySelectorAll('.template-option');
+        const statusFilter = document.getElementById('status-filter');
+        const startDateFilter = document.getElementById('start-date-filter');
+        const endDateFilter = document.getElementById('end-date-filter');
+        const applyFiltersBtn = document.getElementById('apply-filters');
+        const resetFiltersBtn = document.getElementById('reset-filters');
         
         // Stats elements
         const totalUsersEl = document.getElementById('total-users');
@@ -607,17 +747,30 @@
         // Form elements for date calculation
         const startDateInput = document.getElementById('start-date');
         const packageDaysInput = document.getElementById('package-days');
+        const packageAmountInput = document.getElementById('package-amount');
         const calculatedEndDateInput = document.getElementById('calculated-end-date');
         
         const editStartDateInput = document.getElementById('edit-start-date');
         const editPackageDaysInput = document.getElementById('edit-package-days');
+        const editPackageAmountInput = document.getElementById('edit-package-amount');
         const editCalculatedEndDateInput = document.getElementById('edit-calculated-end-date');
+        
+        const renewPackageDaysInput = document.getElementById('renew-package-days');
+        const renewPackageAmountInput = document.getElementById('renew-package-amount');
+        const renewCalculatedEndDateInput = document.getElementById('renew-calculated-end-date');
 
         // Global variables
         let currentUser = null;
         let users = [];
+        let filteredUsers = [];
         let currentSmsUser = null;
         let usersListener = null;
+        let currentTemplate = 'expiry';
+        let currentFilters = {
+            status: 'all',
+            startDate: null,
+            endDate: null
+        };
 
         // Show alert message
         function showAlert(message, type = 'success') {
@@ -629,22 +782,6 @@
             }, 5000);
         }
 
-        // Update debug information
-        function updateDebugInfo() {
-            if (!currentUser) {
-                firebaseStatus.textContent = 'No user logged in';
-                userData.textContent = 'No user data';
-                return;
-            }
-            
-            firebaseStatus.textContent = `User: ${currentUser.email} (${currentUser.uid})`;
-            userData.textContent = `Total users in collection: ${users.length}`;
-            
-            // Log to console for debugging
-            console.log('Current user:', currentUser);
-            console.log('Users in collection:', users);
-        }
-
         // Authentication state observer
         auth.onAuthStateChanged((user) => {
             if (user) {
@@ -652,7 +789,6 @@
                 userEmailSpan.textContent = user.email;
                 showDashboard();
                 loadUsers();
-                updateDebugInfo();
                 showAlert('Successfully signed in!', 'success');
             } else {
                 showLogin();
@@ -709,51 +845,60 @@
             loadUsers();
         });
 
-        // Debug toggle
-        debugToggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            debugPanel.classList.toggle('d-none');
+        // Apply filters button
+        applyFiltersBtn.addEventListener('click', () => {
+            applyFilters();
         });
 
-        // Test connection button
-        testConnectionBtn.addEventListener('click', () => {
-            if (!currentUser) {
-                showAlert('Please log in first', 'warning');
-                return;
-            }
-            
-            // Test Firestore connection by adding a test document
-            const testRef = db.collection('testConnection').doc(currentUser.uid);
-            testRef.set({
-                testTime: new Date().toISOString(),
-                userId: currentUser.uid
-            })
-            .then(() => {
-                showAlert('Firestore connection test successful!', 'success');
-                return testRef.get();
-            })
-            .then((doc) => {
-                if (doc.exists) {
-                    userData.textContent = `Test successful: ${doc.data().testTime}`;
-                }
-            })
-            .catch((error) => {
-                showAlert('Firestore connection test failed: ' + error.message, 'danger');
-                console.error('Firestore test error:', error);
+        // Reset filters button
+        resetFiltersBtn.addEventListener('click', () => {
+            resetFilters();
+        });
+
+        // Template selection
+        templateOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Remove active class from all options
+                templateOptions.forEach(opt => opt.classList.remove('active'));
+                // Add active class to clicked option
+                option.classList.add('active');
+                
+                currentTemplate = option.getAttribute('data-template');
+                updateSmsMessage();
             });
         });
 
-        // Clear debug button
-        clearDebugBtn.addEventListener('click', () => {
-            userData.textContent = 'Cleared';
-        });
-
-        // View all data button
-        viewAllDataBtn.addEventListener('click', () => {
-            allDataContent.textContent = JSON.stringify(users, null, 2);
-            const modal = new bootstrap.Modal(allDataModal);
-            modal.show();
-        });
+        // Update SMS message based on template
+        function updateSmsMessage() {
+            if (!currentSmsUser) return;
+            
+            let message = '';
+            const user = currentSmsUser;
+            const endDate = formatDate(user.endDate);
+            const today = new Date();
+            const endDateTime = new Date(user.endDate);
+            const daysUntilExpiry = Math.ceil((endDateTime - today) / (1000 * 60 * 60 * 24));
+            
+            switch(currentTemplate) {
+                case 'expiry':
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগের মেয়াদ ${endDate} তারিখে শেষ হতে যাচ্ছে। দয়া করে সংযোগ নবায়ন করুন।\n\nইউজার আইডি: ${user.userId}\nকন্ট্রাক্ট নং: MWZ-2023\nযোগাযোগ: 01841246223\nমোহাম্মদ ইয়াকুব হোসেন\nMondol WiFi Zone`;
+                    break;
+                case 'expired':
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগের মেয়াদ শেষ হয়ে গেছে। দয়া করে দ্রুত সংযোগ নবায়ন করুন।\n\nইউজার আইডি: ${user.userId}\nকন্ট্রাক্ট নং: MWZ-2023\nযোগাযোগ: 01841246223\nমোহাম্মদ ইয়াকুব হোসেন\nMondol WiFi Zone`;
+                    break;
+                case 'connection':
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগ সফলভাবে সক্রিয় করা হয়েছে। ${endDate} তারিখ পর্যন্ত ব্যবহার করতে পারবেন।\n\nইউজার আইডি: ${user.userId}\nকন্ট্রাক্ট নং: MWZ-2023\nযোগাযোগ: 01841246223\nমোহাম্মদ ইয়াকুব হোসেন\nMondol WiFi Zone`;
+                    break;
+                case 'renewal':
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগ সফলভাবে নবায়ন করা হয়েছে। নতুন মেয়াদ ${endDate} তারিখ পর্যন্ত।\n\nইউজার আইডি: ${user.userId}\nকন্ট্রাক্ট নং: MWZ-2023\nযোগাযোগ: 01841246223\nমোহাম্মদ ইয়াকুব হোসেন\nMondol WiFi Zone`;
+                    break;
+                case 'custom':
+                    message = '';
+                    break;
+            }
+            
+            smsMessageTextarea.value = message;
+        }
 
         // Date calculation for add user form
         function calculateEndDate(startDate, days) {
@@ -767,7 +912,7 @@
             const days = packageDaysInput.value;
             
             if (startDate && days) {
-                calculatedEndDateInput.value = calculateEndDate(startDate, days);
+                calculatedEndDateInput.value = formatDate(calculateEndDate(startDate, days));
             }
         }
 
@@ -776,7 +921,17 @@
             const days = editPackageDaysInput.value;
             
             if (startDate && days) {
-                editCalculatedEndDateInput.value = calculateEndDate(startDate, days);
+                editCalculatedEndDateInput.value = formatDate(calculateEndDate(startDate, days));
+            }
+        }
+
+        function updateRenewEndDate() {
+            const currentEndDate = document.getElementById('renew-current-end-date').getAttribute('data-date');
+            const days = renewPackageDaysInput.value;
+            
+            if (currentEndDate && days) {
+                const newEndDate = calculateEndDate(currentEndDate, days);
+                renewCalculatedEndDateInput.value = formatDate(newEndDate);
             }
         }
 
@@ -786,28 +941,20 @@
         
         editStartDateInput.addEventListener('change', updateEditEndDate);
         editPackageDaysInput.addEventListener('input', updateEditEndDate);
-
-        // SMS template selection
-        smsTemplateSelect.addEventListener('change', function() {
-            if (this.value === 'expiry' && currentSmsUser) {
-                const user = currentSmsUser;
-                const message = `Dear ${user.name}, your WiFi subscription will expire on ${formatDate(user.endDate)}. Please renew to continue enjoying our services. Thank you.`;
-                smsMessageTextarea.value = message;
-            } else if (this.value === 'custom') {
-                smsMessageTextarea.value = '';
-            }
-        });
+        
+        renewPackageDaysInput.addEventListener('input', updateRenewEndDate);
 
         // Save user button click
         saveUserBtn.addEventListener('click', () => {
+            const userId = document.getElementById('user-id').value;
             const userName = document.getElementById('user-name').value;
             const userPhone = document.getElementById('user-phone').value;
             const startDate = document.getElementById('start-date').value;
             const packageDays = document.getElementById('package-days').value;
             const packageAmount = document.getElementById('package-amount').value;
-            const endDate = calculatedEndDateInput.value;
+            const endDate = calculateEndDate(startDate, packageDays);
             
-            if (!userName || !userPhone || !startDate || !packageDays || !packageAmount) {
+            if (!userId || !userName || !userPhone || !startDate || !packageDays || !packageAmount) {
                 showAlert('Please fill all fields', 'warning');
                 return;
             }
@@ -819,6 +966,7 @@
             
             // Add user to Firestore
             db.collection('users').add({
+                userId: userId,
                 name: userName,
                 phone: userPhone,
                 startDate: startDate,
@@ -826,16 +974,31 @@
                 packageAmount: parseFloat(packageAmount),
                 endDate: endDate,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                userId: currentUser.uid
+                ownerId: currentUser.uid
             })
             .then((docRef) => {
-                console.log('User added with ID: ', docRef.id);
+                // Add to history
+                return db.collection('userHistory').add({
+                    userId: docRef.id,
+                    userCustomId: userId,
+                    userName: userName,
+                    type: 'new',
+                    packageDays: parseInt(packageDays),
+                    packageAmount: parseFloat(packageAmount),
+                    startDate: startDate,
+                    endDate: endDate,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    ownerId: currentUser.uid
+                });
+            })
+            .then(() => {
+                console.log('User added with ID and history recorded');
                 // Close modal and reset form
                 bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
                 addUserForm.reset();
                 // Reset to default values
                 document.getElementById('package-days').value = 30;
-                document.getElementById('package-amount').value = 500;
+                document.getElementById('package-amount').value = 250;
                 updateEndDate();
                 showAlert('User added successfully!', 'success');
             })
@@ -854,14 +1017,15 @@
         // Update user button click
         updateUserBtn.addEventListener('click', () => {
             const userId = document.getElementById('edit-user-id').value;
+            const userCustomId = document.getElementById('edit-user-id-field').value;
             const userName = document.getElementById('edit-user-name').value;
             const userPhone = document.getElementById('edit-user-phone').value;
             const startDate = document.getElementById('edit-start-date').value;
             const packageDays = document.getElementById('edit-package-days').value;
             const packageAmount = document.getElementById('edit-package-amount').value;
-            const endDate = editCalculatedEndDateInput.value;
+            const endDate = calculateEndDate(startDate, packageDays);
             
-            if (!userName || !userPhone || !startDate || !packageDays || !packageAmount) {
+            if (!userCustomId || !userName || !userPhone || !startDate || !packageDays || !packageAmount) {
                 showAlert('Please fill all fields', 'warning');
                 return;
             }
@@ -873,12 +1037,28 @@
             
             // Update user in Firestore
             db.collection('users').doc(userId).update({
+                userId: userCustomId,
                 name: userName,
                 phone: userPhone,
                 startDate: startDate,
                 packageDays: parseInt(packageDays),
                 packageAmount: parseFloat(packageAmount),
                 endDate: endDate
+            })
+            .then(() => {
+                // Add to history
+                return db.collection('userHistory').add({
+                    userId: userId,
+                    userCustomId: userCustomId,
+                    userName: userName,
+                    type: 'update',
+                    packageDays: parseInt(packageDays),
+                    packageAmount: parseFloat(packageAmount),
+                    startDate: startDate,
+                    endDate: endDate,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    ownerId: currentUser.uid
+                });
             })
             .then(() => {
                 // Close modal
@@ -897,48 +1077,62 @@
             });
         });
 
-        // Send SMS button click
-        sendSmsBtn.addEventListener('click', () => {
-            const recipient = document.getElementById('sms-recipient').value;
-            const message = document.getElementById('sms-message').value;
+        // Renew user button click
+        renewUserBtn.addEventListener('click', () => {
+            const userId = document.getElementById('renew-user-id').value;
+            const currentEndDate = document.getElementById('renew-current-end-date').getAttribute('data-date');
+            const packageDays = document.getElementById('renew-package-days').value;
+            const packageAmount = document.getElementById('renew-package-amount').value;
+            const newEndDate = calculateEndDate(currentEndDate, packageDays);
+            const userCustomId = document.getElementById('renew-user-id-field').value;
+            const userName = document.getElementById('renew-user-name').value;
             
-            if (!message) {
-                showAlert('Please enter a message', 'warning');
+            if (!packageDays || !packageAmount) {
+                showAlert('Please fill all fields', 'warning');
                 return;
             }
             
             // Show loading state
-            document.getElementById('send-sms-text').classList.add('d-none');
-            document.getElementById('send-sms-spinner').classList.remove('d-none');
-            sendSmsBtn.disabled = true;
+            document.getElementById('renew-user-text').classList.add('d-none');
+            document.getElementById('renew-user-spinner').classList.remove('d-none');
+            renewUserBtn.disabled = true;
             
-            // In a real implementation, you would call your SMS API here
-            // For demonstration, we'll just show an alert
-            setTimeout(() => {
-                // Log the SMS in Firestore for record keeping
-                db.collection('smsLogs').add({
-                    recipient: recipient,
-                    message: message,
-                    sentAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    userId: currentUser.uid
-                })
-                .then(() => {
-                    console.log('SMS logged successfully');
-                    showAlert('SMS sent successfully!', 'success');
-                })
-                .catch((error) => {
-                    console.error('Error logging SMS: ', error);
-                    showAlert('Error sending SMS. Please try again.', 'danger');
-                })
-                .finally(() => {
-                    // Close modal
-                    bootstrap.Modal.getInstance(document.getElementById('smsModal')).hide();
-                    // Reset button state
-                    document.getElementById('send-sms-text').classList.remove('d-none');
-                    document.getElementById('send-sms-spinner').classList.add('d-none');
-                    sendSmsBtn.disabled = false;
+            // Update user in Firestore
+            db.collection('users').doc(userId).update({
+                packageDays: parseInt(packageDays),
+                packageAmount: parseFloat(packageAmount),
+                endDate: newEndDate
+            })
+            .then(() => {
+                // Add to history
+                return db.collection('userHistory').add({
+                    userId: userId,
+                    userCustomId: userCustomId,
+                    userName: userName,
+                    type: 'renewal',
+                    packageDays: parseInt(packageDays),
+                    packageAmount: parseFloat(packageAmount),
+                    startDate: currentEndDate,
+                    endDate: newEndDate,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    ownerId: currentUser.uid
                 });
-            }, 1000); // Simulate API call delay
+            })
+            .then(() => {
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('renewUserModal')).hide();
+                showAlert('User package renewed successfully!', 'success');
+            })
+            .catch((error) => {
+                console.error('Error renewing user: ', error);
+                showAlert('Error renewing user. Please try again.', 'danger');
+            })
+            .finally(() => {
+                // Reset button state
+                document.getElementById('renew-user-text').classList.remove('d-none');
+                document.getElementById('renew-user-spinner').classList.add('d-none');
+                renewUserBtn.disabled = false;
+            });
         });
 
         // Function to show login section
@@ -976,7 +1170,7 @@
             console.log('Loading users for user:', currentUser.uid);
             
             usersListener = db.collection('users')
-                .where('userId', '==', currentUser.uid)
+                .where('ownerId', '==', currentUser.uid)
                 .onSnapshot((snapshot) => {
                     users = [];
                     usersTableBody.innerHTML = '';
@@ -987,7 +1181,6 @@
                         noUsersRow.classList.remove('d-none');
                         loadingSpinner.style.display = 'none';
                         updateStats(totalAmount);
-                        updateDebugInfo();
                         return;
                     }
                     
@@ -1000,19 +1193,125 @@
                             ...userData
                         };
                         users.push(user);
+                    });
+                    
+                    // Sort users by createdAt locally (fallback if no createdAt)
+                    users.sort((a, b) => {
+                        const aTime = a.createdAt ? a.createdAt.toMillis() : 0;
+                        const bTime = b.createdAt ? b.createdAt.toMillis() : 0;
+                        return bTime - aTime; // Descending order (newest first)
+                    });
+                    
+                    // Apply current filters
+                    filteredUsers = applyUserFilters(users);
+                    
+                    // Now render users and calculate total amount
+                    filteredUsers.forEach(user => {
                         totalAmount += user.packageAmount || 0;
                         renderUserRow(user);
                     });
                     
                     loadingSpinner.style.display = 'none';
                     updateStats(totalAmount);
-                    updateDebugInfo();
                 }, (error) => {
                     console.error('Error fetching users:', error);
                     loadingSpinner.style.display = 'none';
-                    showAlert('Error loading users: ' + error.message, 'danger');
-                    updateDebugInfo();
+                    
+                    if (error.code === 'failed-precondition') {
+                        showAlert('Firestore index required. Please check the instructions on the login page.', 'warning');
+                    } else {
+                        showAlert('Error loading users: ' + error.message, 'danger');
+                    }
                 });
+        }
+
+        // Apply filters to users
+        function applyUserFilters(userList) {
+            let filtered = [...userList];
+            
+            // Status filter
+            if (currentFilters.status !== 'all') {
+                filtered = filtered.filter(user => {
+                    const today = new Date();
+                    const endDate = new Date(user.endDate);
+                    const daysUntilExpiry = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    if (currentFilters.status === 'active') {
+                        return endDate >= today;
+                    } else if (currentFilters.status === 'expiring') {
+                        return daysUntilExpiry > 0 && daysUntilExpiry <= 5;
+                    } else if (currentFilters.status === 'expired') {
+                        return daysUntilExpiry <= 0;
+                    }
+                    return true;
+                });
+            }
+            
+            // Start date filter
+            if (currentFilters.startDate) {
+                filtered = filtered.filter(user => {
+                    const userStartDate = new Date(user.startDate);
+                    const filterStartDate = new Date(currentFilters.startDate);
+                    return userStartDate >= filterStartDate;
+                });
+            }
+            
+            // End date filter
+            if (currentFilters.endDate) {
+                filtered = filtered.filter(user => {
+                    const userEndDate = new Date(user.endDate);
+                    const filterEndDate = new Date(currentFilters.endDate);
+                    return userEndDate >= filterEndDate;
+                });
+            }
+            
+            return filtered;
+        }
+
+        // Apply filters function
+        function applyFilters() {
+            currentFilters.status = statusFilter.value;
+            currentFilters.startDate = startDateFilter.value;
+            currentFilters.endDate = endDateFilter.value;
+            
+            // Reload the table with filtered data
+            filteredUsers = applyUserFilters(users);
+            usersTableBody.innerHTML = '';
+            
+            if (filteredUsers.length === 0) {
+                noUsersRow.classList.remove('d-none');
+            } else {
+                noUsersRow.classList.add('d-none');
+                filteredUsers.forEach(user => renderUserRow(user));
+            }
+            
+            showAlert('Filters applied successfully!', 'success');
+        }
+
+        // Reset filters function
+        function resetFilters() {
+            statusFilter.value = 'all';
+            startDateFilter.value = '';
+            endDateFilter.value = '';
+            
+            currentFilters = {
+                status: 'all',
+                startDate: null,
+                endDate: null
+            };
+            
+            // Reload the table with all data
+            filteredUsers = [...users];
+            usersTableBody.innerHTML = '';
+            
+            if (filteredUsers.length === 0) {
+                noUsersRow.classList.remove('d-none');
+            } else {
+                noUsersRow.classList.add('d-none');
+                filteredUsers.forEach(user => renderUserRow(user));
+            }
+            
+            showAlert('Filters reset successfully!', 'info');
         }
 
         // Function to render a user row in the table
@@ -1036,21 +1335,29 @@
             }
             
             row.innerHTML = `
+                <td>${user.userId || 'N/A'}</td>
                 <td>${user.name}</td>
                 <td>${user.phone}</td>
                 <td>${user.packageDays} days</td>
                 <td>৳${user.packageAmount}</td>
-                <td>${formatDate(user.startDate)}</td>
-                <td>${formatDate(user.endDate)}</td>
+                <td class="date-display">${formatDate(user.startDate)}</td>
+                <td class="date-display">${formatDate(user.endDate)}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary action-btn edit-user" data-id="${user.id}">
+                    <button class="btn btn-sm btn-outline-primary action-btn edit-user" data-id="${user.id}" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-success action-btn send-sms" data-id="${user.id}">
+                    <button class="btn btn-sm btn-outline-success action-btn send-sms" data-id="${user.id}" title="Send SMS">
                         <i class="fas fa-sms"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger action-btn delete-user" data-id="${user.id}">
+                    <button class="btn btn-sm btn-outline-info action-btn history-user" data-id="${user.id}" title="View History">
+                        <i class="fas fa-history"></i>
+                    </button>
+                    ${daysUntilExpiry <= 0 ? 
+                        `<button class="btn btn-sm btn-warning action-btn renew-user" data-id="${user.id}" title="Renew Package">
+                            <i class="fas fa-redo"></i>
+                        </button>` : ''}
+                    <button class="btn btn-sm btn-outline-danger action-btn delete-user" data-id="${user.id}" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -1061,6 +1368,10 @@
             // Add event listeners to action buttons
             row.querySelector('.edit-user').addEventListener('click', () => editUser(user.id));
             row.querySelector('.send-sms').addEventListener('click', () => openSmsModal(user));
+            row.querySelector('.history-user').addEventListener('click', () => openHistoryModal(user));
+            if (daysUntilExpiry <= 0) {
+                row.querySelector('.renew-user').addEventListener('click', () => openRenewModal(user));
+            }
             row.querySelector('.delete-user').addEventListener('click', () => deleteUser(user.id));
             
             noUsersRow.classList.add('d-none');
@@ -1093,6 +1404,7 @@
             const user = users.find(u => u.id === userId);
             if (user) {
                 document.getElementById('edit-user-id').value = user.id;
+                document.getElementById('edit-user-id-field').value = user.userId || '';
                 document.getElementById('edit-user-name').value = user.name;
                 document.getElementById('edit-user-phone').value = user.phone;
                 document.getElementById('edit-start-date').value = user.startDate;
@@ -1100,11 +1412,88 @@
                 document.getElementById('edit-package-amount').value = user.packageAmount;
                 
                 // Calculate and set end date
-                editCalculatedEndDateInput.value = user.endDate;
+                editCalculatedEndDateInput.value = formatDate(user.endDate);
                 
                 const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
                 editModal.show();
             }
+        }
+
+        // Function to open renew modal
+        function openRenewModal(user) {
+            document.getElementById('renew-user-id').value = user.id;
+            document.getElementById('renew-user-id-field').value = user.userId || 'N/A';
+            document.getElementById('renew-user-name').value = user.name;
+            document.getElementById('renew-current-end-date').value = formatDate(user.endDate);
+            document.getElementById('renew-current-end-date').setAttribute('data-date', user.endDate);
+            document.getElementById('renew-package-days').value = 30;
+            document.getElementById('renew-package-amount').value = 250;
+            
+            // Calculate and set new end date
+            updateRenewEndDate();
+            
+            const renewModal = new bootstrap.Modal(document.getElementById('renewUserModal'));
+            renewModal.show();
+        }
+
+        // Function to open history modal
+        function openHistoryModal(user) {
+            document.getElementById('history-user-name').textContent = user.name;
+            document.getElementById('history-user-id').textContent = user.userId || 'N/A';
+            document.getElementById('history-user-phone').textContent = user.phone;
+            
+            // Load user history
+            loadUserHistory(user.id);
+            
+            const historyModal = new bootstrap.Modal(document.getElementById('userHistoryModal'));
+            historyModal.show();
+        }
+
+        // Function to load user history
+        function loadUserHistory(userId) {
+            const historyBody = document.getElementById('user-history-body');
+            historyBody.innerHTML = '<tr><td colspan="6" class="text-center">Loading history...</td></tr>';
+            
+            db.collection('userHistory')
+                .where('userId', '==', userId)
+                .orderBy('timestamp', 'desc')
+                .get()
+                .then((snapshot) => {
+                    historyBody.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        historyBody.innerHTML = '<tr><td colspan="6" class="text-center">No history found</td></tr>';
+                        return;
+                    }
+                    
+                    snapshot.forEach((doc) => {
+                        const history = doc.data();
+                        const row = document.createElement('tr');
+                        
+                        let typeText = '';
+                        switch(history.type) {
+                            case 'new': typeText = 'New Connection'; break;
+                            case 'update': typeText = 'Updated'; break;
+                            case 'renewal': typeText = 'Renewed'; break;
+                            default: typeText = history.type;
+                        }
+                        
+                        row.innerHTML = `
+                            <td class="date-display">${formatDate(history.timestamp?.toDate())}</td>
+                            <td>${typeText}</td>
+                            <td>${history.packageDays} days</td>
+                            <td>৳${history.packageAmount}</td>
+                            <td class="date-display">${formatDate(history.startDate)}</td>
+                            <td class="date-display">${formatDate(history.endDate)}</td>
+                        `;
+                        
+                        historyBody.appendChild(row);
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error loading history:', error);
+                    historyBody.innerHTML = '<tr><td colspan="6" class="text-center">Error loading history</td></tr>';
+                });
         }
 
         // Function to open SMS modal
@@ -1112,14 +1501,35 @@
             currentSmsUser = user;
             document.getElementById('sms-recipient').value = `${user.name} (${user.phone})`;
             
-            // Set default message based on template
-            smsTemplateSelect.value = 'expiry';
-            const message = `Dear ${user.name}, your WiFi subscription will expire on ${formatDate(user.endDate)}. Please renew to continue enjoying our services. Thank you.`;
-            smsMessageTextarea.value = message;
+            // Reset template selection
+            templateOptions.forEach(opt => opt.classList.remove('active'));
+            document.querySelector('.template-option[data-template="expiry"]').classList.add('active');
+            currentTemplate = 'expiry';
+            
+            // Update SMS message
+            updateSmsMessage();
+            
+            // Update SMS link
+            updateSmsLink();
             
             const smsModal = new bootstrap.Modal(document.getElementById('smsModal'));
             smsModal.show();
         }
+
+        // Update SMS link when message changes
+        function updateSmsLink() {
+            if (!currentSmsUser) return;
+            
+            const phone = currentSmsUser.phone;
+            const message = smsMessageTextarea.value;
+            
+            // Create SMS link
+            const smsLink = `sms:${phone}?body=${encodeURIComponent(message)}`;
+            sendSmsLink.href = smsLink;
+        }
+
+        // Listen for changes in the message textarea
+        smsMessageTextarea.addEventListener('input', updateSmsLink);
 
         // Function to delete a user
         function deleteUser(userId) {
@@ -1135,13 +1545,21 @@
             }
         }
 
-        // Function to format date
+        // Function to format date to DD/MM/YYYY
         function formatDate(dateString) {
             if (!dateString) return 'Invalid Date';
             
             try {
-                const options = { year: 'numeric', month: 'short', day: 'numeric' };
-                return new Date(dateString).toLocaleDateString(undefined, options);
+                // Handle Firestore Timestamp
+                if (dateString.toDate) {
+                    dateString = dateString.toDate();
+                }
+                
+                const date = new Date(dateString);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
             } catch (error) {
                 console.error('Error formatting date:', error);
                 return 'Invalid Date';
