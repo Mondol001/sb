@@ -224,6 +224,19 @@
             background-color: #f8f9fa;
             z-index: 10;
         }
+        
+        .history-summary {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .history-total {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--success-color);
+        }
     </style>
 </head>
 <body>
@@ -592,17 +605,29 @@
 
     <!-- User History Modal -->
     <div class="modal fade" id="userHistoryModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">User History</h5>
+                    <h5 class="modal-title">User History & Spending Details</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <h6 id="history-user-name"></h6>
-                        <p class="mb-1">User ID: <span id="history-user-id"></span></p>
-                        <p class="mb-0">Phone: <span id="history-user-phone"></span></p>
+                    <div class="history-summary">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6 id="history-user-name" class="mb-1"></h6>
+                                <p class="mb-1">User ID: <span id="history-user-id"></span></p>
+                                <p class="mb-0">Phone: <span id="history-user-phone"></span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1">Total Connections: <span id="history-total-connections" class="fw-bold">0</span></p>
+                                <p class="mb-1">Total Renewals: <span id="history-total-renewals" class="fw-bold">0</span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1">Total Amount Spent:</p>
+                                <p class="history-total mb-0" id="history-total-amount">৳0</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered">
@@ -614,6 +639,7 @@
                                     <th>Amount</th>
                                     <th>Start Date</th>
                                     <th>End Date</th>
+                                    <th>Connection No.</th>
                                 </tr>
                             </thead>
                             <tbody id="user-history-body">
@@ -974,7 +1000,7 @@
                 ownerId: currentUser.uid
             })
             .then((docRef) => {
-                // Add to history
+                // Add to history with connection number 1
                 return db.collection('userHistory').add({
                     userId: docRef.id,
                     userCustomId: userId,
@@ -984,6 +1010,7 @@
                     packageAmount: parseFloat(packageAmount),
                     startDate: startDate,
                     endDate: endDate,
+                    connectionNumber: 1,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                     ownerId: currentUser.uid
                 });
@@ -1094,42 +1121,53 @@
             document.getElementById('renew-user-spinner').classList.remove('d-none');
             renewUserBtn.disabled = true;
             
-            // Update user in Firestore
-            db.collection('users').doc(userId).update({
-                packageDays: parseInt(packageDays),
-                packageAmount: parseFloat(packageAmount),
-                endDate: newEndDate
-            })
-            .then(() => {
-                // Add to history
-                return db.collection('userHistory').add({
-                    userId: userId,
-                    userCustomId: userCustomId,
-                    userName: userName,
-                    type: 'renewal',
-                    packageDays: parseInt(packageDays),
-                    packageAmount: parseFloat(packageAmount),
-                    startDate: currentEndDate,
-                    endDate: newEndDate,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    ownerId: currentUser.uid
+            // Get current connection number
+            let connectionNumber = 1;
+            db.collection('userHistory')
+                .where('userId', '==', userId)
+                .where('type', 'in', ['new', 'renewal'])
+                .get()
+                .then((snapshot) => {
+                    connectionNumber = snapshot.size + 1;
+                    
+                    // Update user in Firestore
+                    return db.collection('users').doc(userId).update({
+                        packageDays: parseInt(packageDays),
+                        packageAmount: parseFloat(packageAmount),
+                        endDate: newEndDate
+                    });
+                })
+                .then(() => {
+                    // Add to history
+                    return db.collection('userHistory').add({
+                        userId: userId,
+                        userCustomId: userCustomId,
+                        userName: userName,
+                        type: 'renewal',
+                        packageDays: parseInt(packageDays),
+                        packageAmount: parseFloat(packageAmount),
+                        startDate: currentEndDate,
+                        endDate: newEndDate,
+                        connectionNumber: connectionNumber,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        ownerId: currentUser.uid
+                    });
+                })
+                .then(() => {
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('renewUserModal')).hide();
+                    showAlert('User package renewed successfully!', 'success');
+                })
+                .catch((error) => {
+                    console.error('Error renewing user: ', error);
+                    showAlert('Error renewing user. Please try again.', 'danger');
+                })
+                .finally(() => {
+                    // Reset button state
+                    document.getElementById('renew-user-text').classList.remove('d-none');
+                    document.getElementById('renew-user-spinner').classList.add('d-none');
+                    renewUserBtn.disabled = false;
                 });
-            })
-            .then(() => {
-                // Close modal
-                bootstrap.Modal.getInstance(document.getElementById('renewUserModal')).hide();
-                showAlert('User package renewed successfully!', 'success');
-            })
-            .catch((error) => {
-                console.error('Error renewing user: ', error);
-                showAlert('Error renewing user. Please try again.', 'danger');
-            })
-            .finally(() => {
-                // Reset button state
-                document.getElementById('renew-user-text').classList.remove('d-none');
-                document.getElementById('renew-user-spinner').classList.add('d-none');
-                renewUserBtn.disabled = false;
-            });
         });
 
         // Function to show login section
@@ -1446,10 +1484,15 @@
             historyModal.show();
         }
 
-        // Function to load user history
+        // Function to load user history - FIXED VERSION
         function loadUserHistory(userId) {
             const historyBody = document.getElementById('user-history-body');
-            historyBody.innerHTML = '<tr><td colspan="6" class="text-center">Loading history...</td></tr>';
+            historyBody.innerHTML = '<tr><td colspan="7" class="text-center">Loading history...</td></tr>';
+            
+            // Reset summary
+            document.getElementById('history-total-connections').textContent = '0';
+            document.getElementById('history-total-renewals').textContent = '0';
+            document.getElementById('history-total-amount').textContent = '৳0';
             
             db.collection('userHistory')
                 .where('userId', '==', userId)
@@ -1459,37 +1502,65 @@
                     historyBody.innerHTML = '';
                     
                     if (snapshot.empty) {
-                        historyBody.innerHTML = '<tr><td colspan="6" class="text-center">No history found</td></tr>';
+                        historyBody.innerHTML = '<tr><td colspan="7" class="text-center">No history found</td></tr>';
                         return;
                     }
+                    
+                    let totalAmount = 0;
+                    let connectionCount = 0;
+                    let renewalCount = 0;
                     
                     snapshot.forEach((doc) => {
                         const history = doc.data();
                         const row = document.createElement('tr');
                         
                         let typeText = '';
+                        let typeClass = '';
+                        
                         switch(history.type) {
-                            case 'new': typeText = 'New Connection'; break;
-                            case 'update': typeText = 'Updated'; break;
-                            case 'renewal': typeText = 'Renewed'; break;
-                            default: typeText = history.type;
+                            case 'new': 
+                                typeText = 'New Connection';
+                                typeClass = 'text-success';
+                                connectionCount++;
+                                break;
+                            case 'update': 
+                                typeText = 'Updated';
+                                typeClass = 'text-primary';
+                                break;
+                            case 'renewal': 
+                                typeText = 'Renewed';
+                                typeClass = 'text-warning';
+                                renewalCount++;
+                                break;
+                            default: 
+                                typeText = history.type;
                         }
+                        
+                        // Add to total amount
+                        totalAmount += history.packageAmount || 0;
                         
                         row.innerHTML = `
                             <td class="date-display">${formatDate(history.timestamp?.toDate())}</td>
-                            <td>${typeText}</td>
+                            <td><span class="${typeClass}">${typeText}</span></td>
                             <td>${history.packageDays} days</td>
                             <td>৳${history.packageAmount}</td>
                             <td class="date-display">${formatDate(history.startDate)}</td>
                             <td class="date-display">${formatDate(history.endDate)}</td>
+                            <td>${history.connectionNumber || '-'}</td>
                         `;
                         
                         historyBody.appendChild(row);
                     });
+                    
+                    // Update summary
+                    document.getElementById('history-total-connections').textContent = connectionCount;
+                    document.getElementById('history-total-renewals').textContent = renewalCount;
+                    document.getElementById('history-total-amount').textContent = `৳${totalAmount}`;
+                    
                 })
                 .catch((error) => {
                     console.error('Error loading history:', error);
-                    historyBody.innerHTML = '<tr><td colspan="6" class="text-center">Error loading history</td></tr>';
+                    historyBody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading history: ' + error.message + '</td></tr>';
                 });
         }
 
@@ -1531,7 +1602,21 @@
         // Function to delete a user
         function deleteUser(userId) {
             if (confirm('Are you sure you want to delete this user?')) {
-                db.collection('users').doc(userId).delete()
+                // First delete all history records
+                db.collection('userHistory')
+                    .where('userId', '==', userId)
+                    .get()
+                    .then((snapshot) => {
+                        const batch = db.batch();
+                        snapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        // Then delete the user
+                        return db.collection('users').doc(userId).delete();
+                    })
                     .then(() => {
                         showAlert('User deleted successfully!', 'success');
                     })
