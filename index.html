@@ -172,6 +172,7 @@
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.2s;
+            border: 1px solid #dee2e6;
         }
         
         .template-option:hover {
@@ -881,9 +882,10 @@
             resetFilters();
         });
 
-        // Template selection
-        templateOptions.forEach(option => {
-            option.addEventListener('click', () => {
+        // Template selection - FIXED VERSION
+        document.querySelector('.template-options').addEventListener('click', function(e) {
+            const option = e.target.closest('.template-option');
+            if (option) {
                 // Remove active class from all options
                 templateOptions.forEach(opt => opt.classList.remove('active'));
                 // Add active class to clicked option
@@ -891,10 +893,10 @@
                 
                 currentTemplate = option.getAttribute('data-template');
                 updateSmsMessage();
-            });
+            }
         });
 
-        // Update SMS message based on template
+        // Update SMS message based on template - FIXED VERSION
         function updateSmsMessage() {
             if (!currentSmsUser) return;
             
@@ -916,11 +918,17 @@
                     message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগ সফলভাবে নবায়ন করা হয়েছে। নতুন মেয়াদ ${endDate} তারিখ পর্যন্ত। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
                     break;
                 case 'custom':
-                    message = '';
+                    // For custom, don't change the message if it already has content
+                    if (!smsMessageTextarea.value.trim()) {
+                        message = '';
+                    } else {
+                        message = smsMessageTextarea.value;
+                    }
                     break;
             }
             
             smsMessageTextarea.value = message;
+            updateSmsLink();
         }
 
         // Date calculation for add user form
@@ -1471,21 +1479,21 @@
             renewModal.show();
         }
 
-        // Function to open history modal
+        // Function to open history modal - FIXED VERSION (No Index Required)
         function openHistoryModal(user) {
             document.getElementById('history-user-name').textContent = user.name;
             document.getElementById('history-user-id').textContent = user.userId || 'N/A';
             document.getElementById('history-user-phone').textContent = user.phone;
             
-            // Load user history
-            loadUserHistory(user.id);
+            // Load user history without requiring index
+            loadUserHistorySimple(user.id);
             
             const historyModal = new bootstrap.Modal(document.getElementById('userHistoryModal'));
             historyModal.show();
         }
 
-        // Function to load user history - FIXED VERSION
-        function loadUserHistory(userId) {
+        // Function to load user history - SIMPLE VERSION (No Index Required)
+        function loadUserHistorySimple(userId) {
             const historyBody = document.getElementById('user-history-body');
             historyBody.innerHTML = '<tr><td colspan="7" class="text-center">Loading history...</td></tr>';
             
@@ -1494,9 +1502,9 @@
             document.getElementById('history-total-renewals').textContent = '0';
             document.getElementById('history-total-amount').textContent = '৳0';
             
+            // Simple query without ordering - will use default order
             db.collection('userHistory')
                 .where('userId', '==', userId)
-                .orderBy('timestamp', 'desc')
                 .get()
                 .then((snapshot) => {
                     historyBody.innerHTML = '';
@@ -1509,9 +1517,23 @@
                     let totalAmount = 0;
                     let connectionCount = 0;
                     let renewalCount = 0;
+                    const historyItems = [];
                     
                     snapshot.forEach((doc) => {
-                        const history = doc.data();
+                        historyItems.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    // Sort by timestamp descending on client side
+                    historyItems.sort((a, b) => {
+                        const timeA = a.timestamp?.toMillis() || 0;
+                        const timeB = b.timestamp?.toMillis() || 0;
+                        return timeB - timeA;
+                    });
+                    
+                    historyItems.forEach((history) => {
                         const row = document.createElement('tr');
                         
                         let typeText = '';
@@ -1556,29 +1578,25 @@
                     document.getElementById('history-total-connections').textContent = connectionCount;
                     document.getElementById('history-total-renewals').textContent = renewalCount;
                     document.getElementById('history-total-amount').textContent = `৳${totalAmount}`;
-                    
                 })
                 .catch((error) => {
                     console.error('Error loading history:', error);
-                    historyBody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading history: ' + error.message + '</td></tr>';
+                    historyBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading history: ' + error.message + '</td></tr>';
                 });
         }
 
-        // Function to open SMS modal
+        // Function to open SMS modal - FIXED VERSION
         function openSmsModal(user) {
             currentSmsUser = user;
             document.getElementById('sms-recipient').value = `${user.name} (${user.phone})`;
             
-            // Reset template selection
+            // Reset template selection and set first template as active
             templateOptions.forEach(opt => opt.classList.remove('active'));
             document.querySelector('.template-option[data-template="expiry"]').classList.add('active');
             currentTemplate = 'expiry';
             
             // Update SMS message
             updateSmsMessage();
-            
-            // Update SMS link
-            updateSmsLink();
             
             const smsModal = new bootstrap.Modal(document.getElementById('smsModal'));
             smsModal.show();
