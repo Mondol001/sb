@@ -292,6 +292,17 @@
             color: var(--success-color);
             font-weight: bold;
         }
+        
+        .payment-btn {
+            background-color: #20c997;
+            border-color: #20c997;
+            color: white;
+        }
+        
+        .payment-btn:hover {
+            background-color: #1ba87e;
+            border-color: #1ba87e;
+        }
     </style>
 </head>
 <body>
@@ -558,7 +569,7 @@
                             </div>
                             <div class="mb-3">
                                 <label for="paid-amount" class="form-label">Paid Amount (৳)</label>
-                                <input type="number" class="form-control" id="paid-amount" min="0" value="250">
+                                <input type="number" class="form-control" id="paid-amount" min="0" value="0">
                             </div>
                             <div class="mb-0">
                                 <label class="form-label">Pending Amount</label>
@@ -618,9 +629,9 @@
                                 <label for="edit-package-amount" class="form-label">Package Amount (৳)</label>
                                 <input type="number" class="form-control" id="edit-package-amount" min="0" required>
                             </div>
-                            <div class="mb-3">
-                                <label for="edit-paid-amount" class="form-label">Paid Amount (৳)</label>
-                                <input type="number" class="form-control" id="edit-paid-amount" min="0" required>
+                            <div class="mb-0">
+                                <label class="form-label">Paid Amount</label>
+                                <input type="text" class="form-control" id="edit-paid-amount-display" readonly>
                             </div>
                             <div class="mb-0">
                                 <label class="form-label">Pending Amount</label>
@@ -678,7 +689,7 @@
                             </div>
                             <div class="mb-3">
                                 <label for="renew-paid-amount" class="form-label">Paid Amount (৳)</label>
-                                <input type="number" class="form-control" id="renew-paid-amount" min="0" value="250">
+                                <input type="number" class="form-control" id="renew-paid-amount" min="0" value="0">
                             </div>
                             <div class="mb-0">
                                 <label class="form-label">Pending Amount</label>
@@ -702,50 +713,55 @@
         </div>
     </div>
 
-    <!-- Payment History Modal -->
-    <div class="modal fade" id="paymentHistoryModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+    <!-- Add Payment Modal -->
+    <div class="modal fade" id="addPaymentModal" tabindex="-1">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Payment History</h5>
+                    <h5 class="modal-title">Add Payment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="history-summary">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 id="payment-history-user-name" class="mb-1"></h6>
-                                <p class="mb-1">User ID: <span id="payment-history-user-id"></span></p>
-                                <p class="mb-0">Phone: <span id="payment-history-user-phone"></span></p>
+                    <form id="add-payment-form">
+                        <input type="hidden" id="payment-user-id">
+                        <div class="mb-3">
+                            <label class="form-label">User ID</label>
+                            <input type="text" class="form-control" id="payment-user-id-field" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">User Name</label>
+                            <input type="text" class="form-control" id="payment-user-name" readonly>
+                        </div>
+                        <div class="amount-section">
+                            <div class="mb-3">
+                                <label class="form-label">Current Package Amount</label>
+                                <input type="text" class="form-control" id="payment-package-amount" readonly>
                             </div>
-                            <div class="col-md-6">
-                                <p class="mb-1">Total Package Amount: <span id="payment-history-total-package" class="fw-bold">৳0</span></p>
-                                <p class="mb-1">Total Paid Amount: <span id="payment-history-total-paid" class="fw-bold paid-amount">৳0</span></p>
-                                <p class="mb-0">Total Pending Amount: <span id="payment-history-total-pending" class="fw-bold pending-amount">৳0</span></p>
+                            <div class="mb-3">
+                                <label class="form-label">Total Paid Amount</label>
+                                <input type="text" class="form-control" id="payment-total-paid" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Current Pending Amount</label>
+                                <input type="text" class="form-control pending-amount" id="payment-current-pending" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label for="payment-amount" class="form-label">Payment Amount (৳)</label>
+                                <input type="number" class="form-control" id="payment-amount" min="1" required>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label">New Pending Amount</label>
+                                <input type="text" class="form-control" id="payment-new-pending" readonly>
                             </div>
                         </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Package Amount</th>
-                                    <th>Paid Amount</th>
-                                    <th>Pending Amount</th>
-                                    <th>Start Date</th>
-                                    <th>End Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="payment-history-body">
-                                <!-- Payment history will be populated here -->
-                            </tbody>
-                        </table>
-                    </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success payment-btn" id="save-payment-btn">
+                        <span id="save-payment-text">Add Payment</span>
+                        <span id="save-payment-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -903,6 +919,7 @@
         const editUserForm = document.getElementById('edit-user-form');
         const updateUserBtn = document.getElementById('update-user-btn');
         const renewUserBtn = document.getElementById('renew-user-btn');
+        const savePaymentBtn = document.getElementById('save-payment-btn');
         const sendSmsLink = document.getElementById('send-sms-link');
         const smsMessageTextarea = document.getElementById('sms-message');
         const refreshUsersBtn = document.getElementById('refresh-users');
@@ -938,7 +955,7 @@
         const editStartDateInput = document.getElementById('edit-start-date');
         const editPackageDaysInput = document.getElementById('edit-package-days');
         const editPackageAmountInput = document.getElementById('edit-package-amount');
-        const editPaidAmountInput = document.getElementById('edit-paid-amount');
+        const editPaidAmountDisplay = document.getElementById('edit-paid-amount-display');
         const editPendingAmountInput = document.getElementById('edit-pending-amount');
         const editCalculatedEndDateInput = document.getElementById('edit-calculated-end-date');
         
@@ -947,6 +964,9 @@
         const renewPaidAmountInput = document.getElementById('renew-paid-amount');
         const renewPendingAmountInput = document.getElementById('renew-pending-amount');
         const renewCalculatedEndDateInput = document.getElementById('renew-calculated-end-date');
+        
+        const paymentAmountInput = document.getElementById('payment-amount');
+        const paymentNewPendingInput = document.getElementById('payment-new-pending');
 
         // Global variables
         let currentUser = null;
@@ -995,7 +1015,7 @@
         // Update pending amount in edit user form
         function updateEditPendingAmount() {
             const packageAmount = parseFloat(editPackageAmountInput.value) || 0;
-            const paidAmount = parseFloat(editPaidAmountInput.value) || 0;
+            const paidAmount = parseFloat(editPaidAmountDisplay.getAttribute('data-paid')) || 0;
             const pendingAmount = calculatePendingAmount(packageAmount, paidAmount);
             editPendingAmountInput.value = `৳${pendingAmount}`;
             
@@ -1017,6 +1037,20 @@
                 renewPendingAmountInput.className = 'form-control pending-amount';
             } else {
                 renewPendingAmountInput.className = 'form-control';
+            }
+        }
+
+        // Update new pending amount in payment modal
+        function updatePaymentPendingAmount() {
+            const currentPending = parseFloat(document.getElementById('payment-current-pending').getAttribute('data-pending')) || 0;
+            const paymentAmount = parseFloat(paymentAmountInput.value) || 0;
+            const newPending = Math.max(0, currentPending - paymentAmount);
+            paymentNewPendingInput.value = `৳${newPending}`;
+            
+            if (newPending > 0) {
+                paymentNewPendingInput.className = 'form-control pending-amount';
+            } else {
+                paymentNewPendingInput.className = 'form-control';
             }
         }
 
@@ -1205,11 +1239,12 @@
         editStartDateInput.addEventListener('change', updateEditEndDate);
         editPackageDaysInput.addEventListener('input', updateEditEndDate);
         editPackageAmountInput.addEventListener('input', updateEditPendingAmount);
-        editPaidAmountInput.addEventListener('input', updateEditPendingAmount);
         
         renewPackageDaysInput.addEventListener('input', updateRenewEndDate);
         renewPackageAmountInput.addEventListener('input', updateRenewPendingAmount);
         renewPaidAmountInput.addEventListener('input', updateRenewPendingAmount);
+        
+        paymentAmountInput.addEventListener('input', updatePaymentPendingAmount);
 
         // Save user button click
         saveUserBtn.addEventListener('click', () => {
@@ -1270,7 +1305,7 @@
                 // Reset to default values
                 document.getElementById('package-days').value = 30;
                 document.getElementById('package-amount').value = 250;
-                document.getElementById('paid-amount').value = 250;
+                document.getElementById('paid-amount').value = 0;
                 updateEndDate();
                 updatePendingAmount();
                 showAlert('User added successfully!', 'success');
@@ -1287,7 +1322,7 @@
             });
         });
 
-        // Update user button click
+        // Update user button click - WITHOUT HISTORY ENTRY
         updateUserBtn.addEventListener('click', () => {
             const userId = document.getElementById('edit-user-id').value;
             const userCustomId = document.getElementById('edit-user-id-field').value;
@@ -1296,10 +1331,9 @@
             const startDate = document.getElementById('edit-start-date').value;
             const packageDays = document.getElementById('edit-package-days').value;
             const packageAmount = document.getElementById('edit-package-amount').value;
-            const paidAmount = document.getElementById('edit-paid-amount').value;
             const endDate = calculateEndDate(startDate, packageDays);
             
-            if (!userCustomId || !userName || !userPhone || !startDate || !packageDays || !packageAmount || !paidAmount) {
+            if (!userCustomId || !userName || !userPhone || !startDate || !packageDays || !packageAmount) {
                 showAlert('Please fill all fields', 'warning');
                 return;
             }
@@ -1309,7 +1343,7 @@
             document.getElementById('update-user-spinner').classList.remove('d-none');
             updateUserBtn.disabled = true;
             
-            // Update user in Firestore
+            // Update user in Firestore WITHOUT creating history entry
             db.collection('users').doc(userId).update({
                 userId: userCustomId,
                 name: userName,
@@ -1317,24 +1351,7 @@
                 startDate: startDate,
                 packageDays: parseInt(packageDays),
                 packageAmount: parseFloat(packageAmount),
-                paidAmount: parseFloat(paidAmount),
                 endDate: endDate
-            })
-            .then(() => {
-                // Add to history
-                return db.collection('userHistory').add({
-                    userId: userId,
-                    userCustomId: userCustomId,
-                    userName: userName,
-                    type: 'update',
-                    packageDays: parseInt(packageDays),
-                    packageAmount: parseFloat(packageAmount),
-                    paidAmount: parseFloat(paidAmount),
-                    startDate: startDate,
-                    endDate: endDate,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    ownerId: currentUser.uid
-                });
             })
             .then(() => {
                 // Close modal
@@ -1387,7 +1404,7 @@
                     return db.collection('users').doc(userId).update({
                         packageDays: parseInt(packageDays),
                         packageAmount: parseFloat(packageAmount),
-                        paidAmount: parseFloat(paidAmount),
+                        paidAmount: firebase.firestore.FieldValue.increment(parseFloat(paidAmount)),
                         endDate: newEndDate
                     });
                 })
@@ -1423,6 +1440,56 @@
                     document.getElementById('renew-user-spinner').classList.add('d-none');
                     renewUserBtn.disabled = false;
                 });
+        });
+
+        // Save payment button click
+        savePaymentBtn.addEventListener('click', () => {
+            const userId = document.getElementById('payment-user-id').value;
+            const userCustomId = document.getElementById('payment-user-id-field').value;
+            const userName = document.getElementById('payment-user-name').value;
+            const paymentAmount = document.getElementById('payment-amount').value;
+            
+            if (!paymentAmount || paymentAmount <= 0) {
+                showAlert('Please enter a valid payment amount', 'warning');
+                return;
+            }
+            
+            // Show loading state
+            document.getElementById('save-payment-text').classList.add('d-none');
+            document.getElementById('save-payment-spinner').classList.remove('d-none');
+            savePaymentBtn.disabled = true;
+            
+            // Update user's paid amount in Firestore
+            db.collection('users').doc(userId).update({
+                paidAmount: firebase.firestore.FieldValue.increment(parseFloat(paymentAmount))
+            })
+            .then(() => {
+                // Add payment to history
+                return db.collection('userHistory').add({
+                    userId: userId,
+                    userCustomId: userCustomId,
+                    userName: userName,
+                    type: 'payment',
+                    paymentAmount: parseFloat(paymentAmount),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    ownerId: currentUser.uid
+                });
+            })
+            .then(() => {
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('addPaymentModal')).hide();
+                showAlert('Payment added successfully!', 'success');
+            })
+            .catch((error) => {
+                console.error('Error adding payment: ', error);
+                showAlert('Error adding payment. Please try again.', 'danger');
+            })
+            .finally(() => {
+                // Reset button state
+                document.getElementById('save-payment-text').classList.remove('d-none');
+                document.getElementById('save-payment-spinner').classList.add('d-none');
+                savePaymentBtn.disabled = false;
+            });
         });
 
         // Function to show login section
@@ -1678,9 +1745,10 @@
                     <button class="btn btn-sm btn-outline-info action-btn history-user" data-id="${user.id}" title="View History">
                         <i class="fas fa-history"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-dark action-btn payment-history" data-id="${user.id}" title="Payment History">
-                        <i class="fas fa-money-bill"></i>
-                    </button>
+                    ${pendingAmount > 0 ? 
+                        `<button class="btn btn-sm btn-success action-btn add-payment" data-id="${user.id}" title="Add Payment">
+                            <i class="fas fa-money-bill"></i>
+                        </button>` : ''}
                     ${daysUntilExpiry <= 0 ? 
                         `<button class="btn btn-sm btn-warning action-btn renew-user" data-id="${user.id}" title="Renew Package">
                             <i class="fas fa-redo"></i>
@@ -1697,7 +1765,9 @@
             row.querySelector('.edit-user').addEventListener('click', () => editUser(user.id));
             row.querySelector('.send-sms').addEventListener('click', () => openSmsModal(user));
             row.querySelector('.history-user').addEventListener('click', () => openHistoryModal(user));
-            row.querySelector('.payment-history').addEventListener('click', () => openPaymentHistoryModal(user));
+            if (pendingAmount > 0) {
+                row.querySelector('.add-payment').addEventListener('click', () => openPaymentModal(user));
+            }
             if (daysUntilExpiry <= 0) {
                 row.querySelector('.renew-user').addEventListener('click', () => openRenewModal(user));
             }
@@ -1749,7 +1819,10 @@
                 document.getElementById('edit-start-date').value = user.startDate;
                 document.getElementById('edit-package-days').value = user.packageDays;
                 document.getElementById('edit-package-amount').value = user.packageAmount;
-                document.getElementById('edit-paid-amount').value = user.paidAmount || 0;
+                
+                // Set paid amount display (readonly)
+                editPaidAmountDisplay.value = `৳${user.paidAmount || 0}`;
+                editPaidAmountDisplay.setAttribute('data-paid', user.paidAmount || 0);
                 
                 // Calculate and set end date and pending amount
                 editCalculatedEndDateInput.value = formatDate(user.endDate);
@@ -1772,7 +1845,7 @@
             
             document.getElementById('renew-package-days').value = 30;
             document.getElementById('renew-package-amount').value = 250;
-            document.getElementById('renew-paid-amount').value = 250;
+            document.getElementById('renew-paid-amount').value = 0;
             
             // Calculate and set new end date and pending amount
             updateRenewEndDate();
@@ -1780,6 +1853,26 @@
             
             const renewModal = new bootstrap.Modal(document.getElementById('renewUserModal'));
             renewModal.show();
+        }
+
+        // Function to open payment modal
+        function openPaymentModal(user) {
+            document.getElementById('payment-user-id').value = user.id;
+            document.getElementById('payment-user-id-field').value = user.userId || 'N/A';
+            document.getElementById('payment-user-name').value = user.name;
+            document.getElementById('payment-package-amount').value = `৳${user.packageAmount}`;
+            document.getElementById('payment-total-paid').value = `৳${user.paidAmount || 0}`;
+            
+            const pendingAmount = calculatePendingAmount(user.packageAmount, user.paidAmount || 0);
+            document.getElementById('payment-current-pending').value = `৳${pendingAmount}`;
+            document.getElementById('payment-current-pending').setAttribute('data-pending', pendingAmount);
+            
+            // Reset payment amount and update new pending
+            document.getElementById('payment-amount').value = '';
+            updatePaymentPendingAmount();
+            
+            const paymentModal = new bootstrap.Modal(document.getElementById('addPaymentModal'));
+            paymentModal.show();
         }
 
         // Function to open history modal
@@ -1793,19 +1886,6 @@
             
             const historyModal = new bootstrap.Modal(document.getElementById('userHistoryModal'));
             historyModal.show();
-        }
-
-        // Function to open payment history modal
-        function openPaymentHistoryModal(user) {
-            document.getElementById('payment-history-user-name').textContent = user.name;
-            document.getElementById('payment-history-user-id').textContent = user.userId || 'N/A';
-            document.getElementById('payment-history-user-phone').textContent = user.phone;
-            
-            // Load payment history
-            loadPaymentHistory(user.id);
-            
-            const paymentModal = new bootstrap.Modal(document.getElementById('paymentHistoryModal'));
-            paymentModal.show();
         }
 
         // Function to load user history - SIMPLE VERSION (No Index Required)
@@ -1860,31 +1940,32 @@
                                 typeText = 'New Connection';
                                 typeClass = 'text-success';
                                 connectionCount++;
-                                break;
-                            case 'update': 
-                                typeText = 'Updated';
-                                typeClass = 'text-primary';
+                                totalAmount += history.paidAmount || 0;
                                 break;
                             case 'renewal': 
                                 typeText = 'Renewed';
                                 typeClass = 'text-warning';
                                 renewalCount++;
+                                totalAmount += history.paidAmount || 0;
+                                break;
+                            case 'payment': 
+                                typeText = 'Payment';
+                                typeClass = 'text-info';
+                                totalAmount += history.paymentAmount || 0;
                                 break;
                             default: 
-                                typeText = history.type;
+                                // Skip other types (like 'update')
+                                return;
                         }
-                        
-                        // Add to total amount
-                        totalAmount += history.paidAmount || 0;
                         
                         row.innerHTML = `
                             <td class="date-display">${formatDate(history.timestamp?.toDate())}</td>
                             <td><span class="${typeClass}">${typeText}</span></td>
-                            <td>${history.packageDays} days</td>
-                            <td>৳${history.packageAmount}</td>
-                            <td>৳${history.paidAmount || 0}</td>
-                            <td class="date-display">${formatDate(history.startDate)}</td>
-                            <td class="date-display">${formatDate(history.endDate)}</td>
+                            <td>${history.packageDays || '-'} ${history.packageDays ? 'days' : ''}</td>
+                            <td>${history.packageAmount ? `৳${history.packageAmount}` : '-'}</td>
+                            <td>${history.paidAmount ? `৳${history.paidAmount}` : (history.paymentAmount ? `৳${history.paymentAmount}` : '-')}</td>
+                            <td class="date-display">${history.startDate ? formatDate(history.startDate) : '-'}</td>
+                            <td class="date-display">${history.endDate ? formatDate(history.endDate) : '-'}</td>
                             <td>${history.connectionNumber || '-'}</td>
                         `;
                         
@@ -1899,102 +1980,6 @@
                 .catch((error) => {
                     console.error('Error loading history:', error);
                     historyBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading history: ' + error.message + '</td></tr>';
-                });
-        }
-
-        // Function to load payment history
-        function loadPaymentHistory(userId) {
-            const historyBody = document.getElementById('payment-history-body');
-            historyBody.innerHTML = '<tr><td colspan="7" class="text-center">Loading payment history...</td></tr>';
-            
-            // Reset summary
-            document.getElementById('payment-history-total-package').textContent = '৳0';
-            document.getElementById('payment-history-total-paid').textContent = '৳0';
-            document.getElementById('payment-history-total-pending').textContent = '৳0';
-            
-            // Simple query without ordering - will use default order
-            db.collection('userHistory')
-                .where('userId', '==', userId)
-                .get()
-                .then((snapshot) => {
-                    historyBody.innerHTML = '';
-                    
-                    if (snapshot.empty) {
-                        historyBody.innerHTML = '<tr><td colspan="7" class="text-center">No payment history found</td></tr>';
-                        return;
-                    }
-                    
-                    let totalPackage = 0;
-                    let totalPaid = 0;
-                    let totalPending = 0;
-                    const historyItems = [];
-                    
-                    snapshot.forEach((doc) => {
-                        historyItems.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
-                    
-                    // Sort by timestamp descending on client side
-                    historyItems.sort((a, b) => {
-                        const timeA = a.timestamp?.toMillis() || 0;
-                        const timeB = b.timestamp?.toMillis() || 0;
-                        return timeB - timeA;
-                    });
-                    
-                    historyItems.forEach((history) => {
-                        const row = document.createElement('tr');
-                        
-                        let typeText = '';
-                        let typeClass = '';
-                        
-                        switch(history.type) {
-                            case 'new': 
-                                typeText = 'New Connection';
-                                typeClass = 'text-success';
-                                break;
-                            case 'update': 
-                                typeText = 'Updated';
-                                typeClass = 'text-primary';
-                                break;
-                            case 'renewal': 
-                                typeText = 'Renewed';
-                                typeClass = 'text-warning';
-                                break;
-                            default: 
-                                typeText = history.type;
-                        }
-                        
-                        // Calculate pending amount for this transaction
-                        const pendingAmount = calculatePendingAmount(history.packageAmount, history.paidAmount || 0);
-                        
-                        // Add to totals
-                        totalPackage += history.packageAmount || 0;
-                        totalPaid += history.paidAmount || 0;
-                        totalPending += pendingAmount;
-                        
-                        row.innerHTML = `
-                            <td class="date-display">${formatDate(history.timestamp?.toDate())}</td>
-                            <td><span class="${typeClass}">${typeText}</span></td>
-                            <td>৳${history.packageAmount}</td>
-                            <td class="${history.paidAmount > 0 ? 'paid-amount' : ''}">৳${history.paidAmount || 0}</td>
-                            <td class="${pendingAmount > 0 ? 'pending-amount' : ''}">৳${pendingAmount}</td>
-                            <td class="date-display">${formatDate(history.startDate)}</td>
-                            <td class="date-display">${formatDate(history.endDate)}</td>
-                        `;
-                        
-                        historyBody.appendChild(row);
-                    });
-                    
-                    // Update summary
-                    document.getElementById('payment-history-total-package').textContent = `৳${totalPackage}`;
-                    document.getElementById('payment-history-total-paid').textContent = `৳${totalPaid}`;
-                    document.getElementById('payment-history-total-pending').textContent = `৳${totalPending}`;
-                })
-                .catch((error) => {
-                    console.error('Error loading payment history:', error);
-                    historyBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading payment history: ' + error.message + '</td></tr>';
                 });
         }
 
