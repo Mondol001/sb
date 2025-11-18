@@ -493,6 +493,66 @@
         .modal-lg-custom {
             max-width: 800px;
         }
+
+        /* Countdown Timer Styles */
+        .countdown-timer {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-top: 5px;
+            display: inline-block;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .countdown-active {
+            background-color: rgba(75, 181, 67, 0.15);
+            color: #2d5016;
+            border: 1px solid #4bb543;
+        }
+
+        .countdown-warning {
+            background-color: rgba(255, 204, 0, 0.15);
+            color: #856404;
+            border: 1px solid #ffcc00;
+        }
+
+        .countdown-expired {
+            background-color: rgba(220, 53, 69, 0.15);
+            color: #721c24;
+            border: 1px solid #dc3545;
+        }
+
+        .countdown-expiring {
+            background-color: rgba(255, 152, 0, 0.15);
+            color: #e65100;
+            border: 1px solid #ff9800;
+        }
+
+        .time-unit {
+            font-size: 0.7rem;
+            font-weight: normal;
+            color: #666;
+        }
+
+        /* Date with countdown container */
+        .date-with-countdown {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .date-value {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .time-running {
+            background-color: rgba(67, 97, 238, 0.15);
+            color: #1a237e;
+            border: 1px solid #4361ee;
+        }
     </style>
 </head>
 <body>
@@ -1324,6 +1384,7 @@
         let isMasked = true;
         let searchTimeout = null;
         let currentEditUser = null;
+        let countdownInterval = null;
 
         // Show alert message
         function showAlert(message, type = 'success') {
@@ -1393,6 +1454,181 @@
                 paymentNewPendingInput.className = 'form-control pending-amount';
             } else {
                 paymentNewPendingInput.className = 'form-control';
+            }
+        }
+
+        // Function to calculate time remaining and format it
+        function calculateTimeRemaining(endDate) {
+            const now = new Date();
+            const end = new Date(endDate);
+            const diff = end - now;
+            
+            if (diff <= 0) {
+                return {
+                    days: 0,
+                    hours: 0,
+                    minutes: 0,
+                    totalSeconds: 0,
+                    expired: true
+                };
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            return {
+                days,
+                hours,
+                minutes,
+                totalSeconds: Math.floor(diff / 1000),
+                expired: false
+            };
+        }
+
+        // Function to format time remaining for display
+        function formatTimeRemaining(timeObj) {
+            if (timeObj.expired) {
+                return {
+                    text: 'মেয়াদ শেষ',
+                    class: 'countdown-expired',
+                    shortText: 'সময় শেষ'
+                };
+            }
+            
+            const { days, hours, minutes } = timeObj;
+            
+            if (days > 30) {
+                return {
+                    text: `${days} দিন বাকি`,
+                    class: 'countdown-active',
+                    shortText: `${days} দিন`
+                };
+            } else if (days > 7) {
+                return {
+                    text: `${days} দিন বাকি`,
+                    class: 'countdown-active',
+                    shortText: `${days} দিন`
+                };
+            } else if (days > 3) {
+                return {
+                    text: `${days} দিন ${hours} ঘন্টা বাকি`,
+                    class: 'countdown-warning',
+                    shortText: `${days} দিন`
+                };
+            } else if (days > 0) {
+                return {
+                    text: `${days} দিন ${hours} ঘন্টা বাকি`,
+                    class: 'countdown-expiring',
+                    shortText: `${days} দিন`
+                };
+            } else if (hours > 0) {
+                return {
+                    text: `${hours} ঘন্টা ${minutes} মিনিট বাকি`,
+                    class: 'countdown-expiring',
+                    shortText: `${hours} ঘন্টা`
+                };
+            } else {
+                return {
+                    text: `${minutes} মিনিট বাকি`,
+                    class: 'countdown-expiring',
+                    shortText: `${minutes} মিনিট`
+                };
+            }
+        }
+
+        // Function to calculate and display time passed since start date
+        function calculateTimePassed(startDate) {
+            const now = new Date();
+            const start = new Date(startDate);
+            const diff = now - start;
+            
+            if (diff <= 0) {
+                return {
+                    days: 0,
+                    hours: 0,
+                    minutes: 0,
+                    future: true
+                };
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            return {
+                days,
+                hours,
+                minutes,
+                future: false
+            };
+        }
+
+        // Function to format time passed for display
+        function formatTimePassed(timeObj) {
+            if (timeObj.future) {
+                return {
+                    text: 'শুরু হয়নি',
+                    class: 'countdown-expired'
+                };
+            }
+            
+            const { days, hours, minutes } = timeObj;
+            
+            if (days > 0) {
+                return {
+                    text: `${days} দিন চলছে`,
+                    class: 'time-running'
+                };
+            } else if (hours > 0) {
+                return {
+                    text: `${hours} ঘন্টা চলছে`,
+                    class: 'time-running'
+                };
+            } else {
+                return {
+                    text: `${minutes} মিনিট চলছে`,
+                    class: 'time-running'
+                };
+            }
+        }
+
+        // Function to update countdown timers
+        function updateCountdownTimers() {
+            document.querySelectorAll('.countdown-timer').forEach(timer => {
+                const endDate = timer.getAttribute('data-enddate');
+                const startDate = timer.getAttribute('data-startdate');
+                
+                if (endDate) {
+                    const timeRemaining = calculateTimeRemaining(endDate);
+                    const formatted = formatTimeRemaining(timeRemaining);
+                    
+                    timer.textContent = formatted.text;
+                    timer.className = `countdown-timer ${formatted.class}`;
+                }
+                
+                if (startDate) {
+                    const timePassed = calculateTimePassed(startDate);
+                    const formatted = formatTimePassed(timePassed);
+                    
+                    timer.textContent = formatted.text;
+                    timer.className = `countdown-timer ${formatted.class}`;
+                }
+            });
+        }
+
+        // Start countdown timer updates
+        function startCountdownTimers() {
+            // Update immediately
+            updateCountdownTimers();
+            
+            // Update every minute
+            countdownInterval = setInterval(updateCountdownTimers, 60000);
+        }
+
+        function stopCountdownTimers() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
             }
         }
 
@@ -1509,13 +1745,54 @@
             
             switch(currentTemplate) {
                 case 'expiry':
-                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগের মেয়াদ ${endDate} তারিখে শেষ হতে যাচ্ছে। দয়া করে সংযোগ নবায়ন করুন। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
+                    // Calculate days remaining for expiry template
+                    const expiryEndDate = new Date(user.endDate);
+                    const expiryToday = new Date();
+                    const expiryTimeDiff = expiryEndDate - expiryToday;
+                    const expiryDaysRemaining = Math.ceil(expiryTimeDiff / (1000 * 60 * 60 * 24));
+                    
+                    let expiryRemainingText = '';
+                    if (expiryDaysRemaining > 0) {
+                        expiryRemainingText = `\nসংযোগ শেষ হতে বাকি: ${expiryDaysRemaining} দিন`;
+                    } else if (expiryDaysRemaining === 0) {
+                        expiryRemainingText = `\n⚠️ আজই সংযোগ শেষ!`;
+                    }
+                    
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগের মেয়াদ ${formatDate(user.endDate)} তারিখে শেষ হতে যাচ্ছে। দয়া করে সংযোগ নবায়ন করুন।${expiryRemainingText}\n\nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
                     break;
                 case 'expired':
-                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগের মেয়াদ ${endDate} তারিখে শেষ হয়ে গেছে। দয়া করে দ্রুত সংযোগ নবায়ন করুন। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
+                    // Calculate how many days ago it expired
+                    const expiredEndDate = new Date(user.endDate);
+                    const expiredToday = new Date();
+                    const expiredTimeDiff = expiredToday - expiredEndDate;
+                    const daysExpired = Math.ceil(expiredTimeDiff / (1000 * 60 * 60 * 24));
+                    
+                    let expiredText = '';
+                    if (daysExpired > 0) {
+                        expiredText = `\n❌ সংযোগ ${daysExpired} দিন আগে শেষ হয়েছে!`;
+                    } else {
+                        expiredText = `\n❌ সংযোগ মেয়াদ শেষ!`;
+                    }
+                    
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগের মেয়াদ ${formatDate(user.endDate)} তারিখে শেষ হয়ে গেছে। দয়া করে দ্রুত সংযোগ নবায়ন করুন।${expiredText}\n\nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
                     break;
                 case 'payment_reminder':
-                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগের জন্য মোট বকেয়া রয়েছে ৳${pendingAmount}। দয়া করে আজই বাকি টাকা পরিশোধ করুন। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
+                    // Calculate days remaining
+                    const endDate = new Date(user.endDate);
+                    const today = new Date();
+                    const timeDiff = endDate - today;
+                    const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                    
+                    let daysRemainingText = '';
+                    if (daysRemaining > 0) {
+                        daysRemainingText = `\nসংযোগ শেষ হতে বাকি: ${daysRemaining} দিন`;
+                    } else if (daysRemaining === 0) {
+                        daysRemainingText = `\n⚠️ আজই সংযোগ শেষ!`;
+                    } else {
+                        daysRemainingText = `\n❌ সংযোগ মেয়াদ শেষ!`;
+                    }
+                    
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগের জন্য মোট বকেয়া রয়েছে ৳${pendingAmount}। দয়া করে আজই বাকি টাকা পরিশোধ করুন। অন্যथा সংযোগ বন্ধ হয়ে যেতে পারে।${daysRemainingText}\n\nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
                     break;
                 case 'connection':
                     message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগ সফলভাবে সক্রিয় করা হয়েছে। ${endDate} তারিখ পর্যন্ত ব্যবহার করতে পারবেন। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
@@ -1938,12 +2215,14 @@
             if (usersListener) {
                 usersListener();
             }
+            stopCountdownTimers();
         }
 
         // Function to show dashboard
         function showDashboard() {
             loginSection.classList.add('d-none');
             dashboardSection.classList.remove('d-none');
+            startCountdownTimers();
         }
 
         // Function to load users from Firestore
@@ -2030,6 +2309,9 @@
                     loadingSpinner.style.display = 'none';
                     updateStats(totalAmount);
                     updateFilteredCount();
+                    
+                    // Update countdown timers after rendering
+                    setTimeout(updateCountdownTimers, 100);
                 }, (error) => {
                     console.error('Error fetching users:', error);
                     loadingSpinner.style.display = 'none';
@@ -2189,6 +2471,14 @@
                 `<span class="masked-id">${maskUserId(user.userId)}</span>` : 
                 `<span class="masked-id revealed">${user.userId}</span>`;
             
+            // Calculate time remaining for end date
+            const endTimeRemaining = calculateTimeRemaining(user.endDate);
+            const endTimeFormatted = formatTimeRemaining(endTimeRemaining);
+            
+            // Calculate time passed for start date
+            const startTimePassed = calculateTimePassed(user.startDate);
+            const startTimeFormatted = formatTimePassed(startTimePassed);
+            
             row.innerHTML = `
                 <td>
                     <div class="d-flex align-items-center">
@@ -2232,9 +2522,23 @@
                     </span>
                     <div class="small text-muted mt-1">${user.packageDays} দিন</div>
                 </td>
-                <td class="date-display">${formatDate(user.startDate)}</td>
-                <td class="date-display ${daysUntilExpiry <= 0 ? 'text-danger fw-bold' : ''}">
-                    ${formatDate(user.endDate)}
+                <td>
+                    <div class="date-with-countdown">
+                        <div class="date-value">${formatDate(user.startDate)}</div>
+                        <div class="countdown-timer ${startTimeFormatted.class}" data-startdate="${user.startDate}">
+                            ${startTimeFormatted.text}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-with-countdown">
+                        <div class="date-value ${daysUntilExpiry <= 0 ? 'text-danger fw-bold' : ''}">
+                            ${formatDate(user.endDate)}
+                        </div>
+                        <div class="countdown-timer ${endTimeFormatted.class}" data-enddate="${user.endDate}">
+                            ${endTimeFormatted.text}
+                        </div>
+                    </div>
                 </td>
                 <td>
                     <div class="quick-actions">
@@ -2294,6 +2598,14 @@
                 `<span class="masked-id">${maskUserId(user.userId)}</span>` : 
                 `<span class="masked-id revealed">${user.userId}</span>`;
             
+            // Calculate time remaining for end date
+            const endTimeRemaining = calculateTimeRemaining(user.endDate);
+            const endTimeFormatted = formatTimeRemaining(endTimeRemaining);
+            
+            // Calculate time passed for start date
+            const startTimePassed = calculateTimePassed(user.startDate);
+            const startTimeFormatted = formatTimePassed(startTimePassed);
+            
             row.innerHTML = `
                 <td>
                     <div class="d-flex align-items-center">
@@ -2334,8 +2646,22 @@
                     </span>
                     <div class="small text-muted mt-1">${user.packageDays} দিন</div>
                 </td>
-                <td class="date-display">${formatDate(user.startDate)}</td>
-                <td class="date-display">${formatDate(user.endDate)}</td>
+                <td>
+                    <div class="date-with-countdown">
+                        <div class="date-value">${formatDate(user.startDate)}</div>
+                        <div class="countdown-timer ${startTimeFormatted.class}" data-startdate="${user.startDate}">
+                            ${startTimeFormatted.text}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-with-countdown">
+                        <div class="date-value">${formatDate(user.endDate)}</div>
+                        <div class="countdown-timer ${endTimeFormatted.class}" data-enddate="${user.endDate}">
+                            ${endTimeFormatted.text}
+                        </div>
+                    </div>
+                </td>
                 <td>
                     <div class="quick-actions">
                         <button class="btn btn-sm btn-outline-info action-btn-sm history-user" data-id="${user.id}" title="ইতিহাস">
