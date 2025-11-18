@@ -238,6 +238,60 @@
             font-weight: bold;
             color: var(--success-color);
         }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .search-input {
+            padding-left: 40px;
+        }
+        
+        .masked-id {
+            filter: blur(4px);
+            transition: filter 0.3s ease;
+        }
+        
+        .masked-id.revealed {
+            filter: none;
+        }
+        
+        .toggle-mask {
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        
+        .toggle-mask:hover {
+            color: var(--primary-color);
+        }
+        
+        .amount-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .pending-amount {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+        
+        .paid-amount {
+            color: var(--success-color);
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -373,7 +427,7 @@
                 </div>
             </div>
 
-            <!-- Filters Section -->
+            <!-- Filters and Search Section -->
             <div class="filter-section">
                 <div class="row">
                     <div class="col-md-3 mb-2">
@@ -399,6 +453,25 @@
                         </button>
                     </div>
                 </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="form-control search-input" id="user-search" placeholder="Search by User ID or Name...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center justify-content-end">
+                        <button class="btn btn-outline-secondary me-2" id="toggle-mask-btn">
+                            <i class="fas fa-eye me-1"></i> <span id="mask-text">Show IDs</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" id="refresh-users">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" id="reset-filters">
+                            <i class="fas fa-times me-1"></i> Reset
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Users Table -->
@@ -406,12 +479,7 @@
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0"><i class="fas fa-users me-2"></i>User Management</h5>
                     <div>
-                        <button class="btn btn-sm btn-outline-primary" id="refresh-users">
-                            <i class="fas fa-sync-alt me-1"></i> Refresh
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary" id="reset-filters">
-                            <i class="fas fa-times me-1"></i> Reset Filters
-                        </button>
+                        <span class="badge bg-light text-dark" id="filtered-count">Showing all users</span>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -483,9 +551,19 @@
                             <label for="package-days" class="form-label">Package Duration (Days)</label>
                             <input type="number" class="form-control" id="package-days" min="1" value="30" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="package-amount" class="form-label">Package Amount (৳)</label>
-                            <input type="number" class="form-control" id="package-amount" min="0" value="250" required>
+                        <div class="amount-section">
+                            <div class="mb-3">
+                                <label for="package-amount" class="form-label">Package Amount (৳)</label>
+                                <input type="number" class="form-control" id="package-amount" min="0" value="250" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="paid-amount" class="form-label">Paid Amount (৳)</label>
+                                <input type="number" class="form-control" id="paid-amount" min="0" value="250">
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label">Pending Amount</label>
+                                <input type="text" class="form-control" id="pending-amount" readonly>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">End Date</label>
@@ -535,9 +613,19 @@
                             <label for="edit-package-days" class="form-label">Package Duration (Days)</label>
                             <input type="number" class="form-control" id="edit-package-days" min="1" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="edit-package-amount" class="form-label">Package Amount (৳)</label>
-                            <input type="number" class="form-control" id="edit-package-amount" min="0" required>
+                        <div class="amount-section">
+                            <div class="mb-3">
+                                <label for="edit-package-amount" class="form-label">Package Amount (৳)</label>
+                                <input type="number" class="form-control" id="edit-package-amount" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit-paid-amount" class="form-label">Paid Amount (৳)</label>
+                                <input type="number" class="form-control" id="edit-paid-amount" min="0" required>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label">Pending Amount</label>
+                                <input type="text" class="form-control" id="edit-pending-amount" readonly>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">End Date</label>
@@ -576,16 +664,26 @@
                             <input type="text" class="form-control" id="renew-user-name" readonly>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Current End Date</label>
-                            <input type="text" class="form-control date-display" id="renew-current-end-date" readonly>
+                            <label class="form-label">Renewal Start Date</label>
+                            <input type="text" class="form-control date-display" id="renew-start-date" readonly>
                         </div>
                         <div class="mb-3">
                             <label for="renew-package-days" class="form-label">Renewal Duration (Days)</label>
                             <input type="number" class="form-control" id="renew-package-days" min="1" value="30" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="renew-package-amount" class="form-label">Renewal Amount (৳)</label>
-                            <input type="number" class="form-control" id="renew-package-amount" min="0" value="250" required>
+                        <div class="amount-section">
+                            <div class="mb-3">
+                                <label for="renew-package-amount" class="form-label">Renewal Amount (৳)</label>
+                                <input type="number" class="form-control" id="renew-package-amount" min="0" value="250" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="renew-paid-amount" class="form-label">Paid Amount (৳)</label>
+                                <input type="number" class="form-control" id="renew-paid-amount" min="0" value="250">
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label">Pending Amount</label>
+                                <input type="text" class="form-control" id="renew-pending-amount" readonly>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">New End Date</label>
@@ -599,6 +697,55 @@
                         <span id="renew-user-text">Renew Package</span>
                         <span id="renew-user-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History Modal -->
+    <div class="modal fade" id="paymentHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payment History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="history-summary">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 id="payment-history-user-name" class="mb-1"></h6>
+                                <p class="mb-1">User ID: <span id="payment-history-user-id"></span></p>
+                                <p class="mb-0">Phone: <span id="payment-history-user-phone"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1">Total Package Amount: <span id="payment-history-total-package" class="fw-bold">৳0</span></p>
+                                <p class="mb-1">Total Paid Amount: <span id="payment-history-total-paid" class="fw-bold paid-amount">৳0</span></p>
+                                <p class="mb-0">Total Pending Amount: <span id="payment-history-total-pending" class="fw-bold pending-amount">৳0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Package Amount</th>
+                                    <th>Paid Amount</th>
+                                    <th>Pending Amount</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payment-history-body">
+                                <!-- Payment history will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -637,7 +784,8 @@
                                     <th>Date</th>
                                     <th>Type</th>
                                     <th>Package Days</th>
-                                    <th>Amount</th>
+                                    <th>Package Amount</th>
+                                    <th>Paid Amount</th>
                                     <th>Start Date</th>
                                     <th>End Date</th>
                                     <th>Connection No.</th>
@@ -687,6 +835,10 @@
                             <div class="template-option" data-template="renewal">
                                 <strong>সংযোগ নবায়ন</strong>
                                 <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগ সফলভাবে নবায়ন করা হয়েছে।</div>
+                            </div>
+                            <div class="template-option" data-template="payment">
+                                <strong>পেমেন্ট রিমাইন্ডার</strong>
+                                <div class="bangla-text small text-muted">আপনার Mondol WiFi Zone সংযোগের জন্য পেমেন্ট বাকি আছে। দয়া করে পেমেন্ট সম্পন্ন করুন।</div>
                             </div>
                             <div class="template-option" data-template="custom">
                                 <strong>কাস্টম মেসেজ</strong>
@@ -764,6 +916,10 @@
         const endDateFilter = document.getElementById('end-date-filter');
         const applyFiltersBtn = document.getElementById('apply-filters');
         const resetFiltersBtn = document.getElementById('reset-filters');
+        const userSearchInput = document.getElementById('user-search');
+        const toggleMaskBtn = document.getElementById('toggle-mask-btn');
+        const maskText = document.getElementById('mask-text');
+        const filteredCount = document.getElementById('filtered-count');
         
         // Stats elements
         const totalUsersEl = document.getElementById('total-users');
@@ -775,15 +931,21 @@
         const startDateInput = document.getElementById('start-date');
         const packageDaysInput = document.getElementById('package-days');
         const packageAmountInput = document.getElementById('package-amount');
+        const paidAmountInput = document.getElementById('paid-amount');
+        const pendingAmountInput = document.getElementById('pending-amount');
         const calculatedEndDateInput = document.getElementById('calculated-end-date');
         
         const editStartDateInput = document.getElementById('edit-start-date');
         const editPackageDaysInput = document.getElementById('edit-package-days');
         const editPackageAmountInput = document.getElementById('edit-package-amount');
+        const editPaidAmountInput = document.getElementById('edit-paid-amount');
+        const editPendingAmountInput = document.getElementById('edit-pending-amount');
         const editCalculatedEndDateInput = document.getElementById('edit-calculated-end-date');
         
         const renewPackageDaysInput = document.getElementById('renew-package-days');
         const renewPackageAmountInput = document.getElementById('renew-package-amount');
+        const renewPaidAmountInput = document.getElementById('renew-paid-amount');
+        const renewPendingAmountInput = document.getElementById('renew-pending-amount');
         const renewCalculatedEndDateInput = document.getElementById('renew-calculated-end-date');
 
         // Global variables
@@ -798,6 +960,8 @@
             startDate: null,
             endDate: null
         };
+        let isMasked = true;
+        let searchTimeout = null;
 
         // Show alert message
         function showAlert(message, type = 'success') {
@@ -807,6 +971,53 @@
                 const bsAlert = new bootstrap.Alert(alertMessage);
                 bsAlert.close();
             }, 5000);
+        }
+
+        // Calculate pending amount
+        function calculatePendingAmount(packageAmount, paidAmount) {
+            return Math.max(0, packageAmount - paidAmount);
+        }
+
+        // Update pending amount in add user form
+        function updatePendingAmount() {
+            const packageAmount = parseFloat(packageAmountInput.value) || 0;
+            const paidAmount = parseFloat(paidAmountInput.value) || 0;
+            const pendingAmount = calculatePendingAmount(packageAmount, paidAmount);
+            pendingAmountInput.value = `৳${pendingAmount}`;
+            
+            if (pendingAmount > 0) {
+                pendingAmountInput.className = 'form-control pending-amount';
+            } else {
+                pendingAmountInput.className = 'form-control';
+            }
+        }
+
+        // Update pending amount in edit user form
+        function updateEditPendingAmount() {
+            const packageAmount = parseFloat(editPackageAmountInput.value) || 0;
+            const paidAmount = parseFloat(editPaidAmountInput.value) || 0;
+            const pendingAmount = calculatePendingAmount(packageAmount, paidAmount);
+            editPendingAmountInput.value = `৳${pendingAmount}`;
+            
+            if (pendingAmount > 0) {
+                editPendingAmountInput.className = 'form-control pending-amount';
+            } else {
+                editPendingAmountInput.className = 'form-control';
+            }
+        }
+
+        // Update pending amount in renew user form
+        function updateRenewPendingAmount() {
+            const packageAmount = parseFloat(renewPackageAmountInput.value) || 0;
+            const paidAmount = parseFloat(renewPaidAmountInput.value) || 0;
+            const pendingAmount = calculatePendingAmount(packageAmount, paidAmount);
+            renewPendingAmountInput.value = `৳${pendingAmount}`;
+            
+            if (pendingAmount > 0) {
+                renewPendingAmountInput.className = 'form-control pending-amount';
+            } else {
+                renewPendingAmountInput.className = 'form-control';
+            }
         }
 
         // Authentication state observer
@@ -882,7 +1093,22 @@
             resetFilters();
         });
 
-        // Template selection - FIXED VERSION
+        // Search functionality
+        userSearchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applyFilters();
+            }, 300);
+        });
+
+        // Toggle mask button
+        toggleMaskBtn.addEventListener('click', () => {
+            isMasked = !isMasked;
+            maskText.textContent = isMasked ? 'Show IDs' : 'Hide IDs';
+            renderUsersTable();
+        });
+
+        // Template selection
         document.querySelector('.template-options').addEventListener('click', function(e) {
             const option = e.target.closest('.template-option');
             if (option) {
@@ -896,13 +1122,14 @@
             }
         });
 
-        // Update SMS message based on template - FIXED VERSION
+        // Update SMS message based on template
         function updateSmsMessage() {
             if (!currentSmsUser) return;
             
             let message = '';
             const user = currentSmsUser;
             const endDate = formatDate(user.endDate);
+            const pendingAmount = calculatePendingAmount(user.packageAmount, user.paidAmount || 0);
             
             switch(currentTemplate) {
                 case 'expiry':
@@ -916,6 +1143,9 @@
                     break;
                 case 'renewal':
                     message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone এ ওয়াইফাই সংযোগ সফলভাবে নবায়ন করা হয়েছে। নতুন মেয়াদ ${endDate} তারিখ পর্যন্ত। \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
+                    break;
+                case 'payment':
+                    message = `প্রিয় ${user.name},\n\nআপনার Mondol WiFi Zone সংযোগের জন্য ${pendingAmount > 0 ? `৳${pendingAmount} বাকি আছে।` : 'সমস্ত পেমেন্ট সম্পন্ন হয়েছে।'} দয়া করে ${pendingAmount > 0 ? 'বাকি পেমেন্ট সম্পন্ন করুন।' : 'সংযোগ ব্যবহার করুন।'} \nআপনার ইউজার আইডি: ${user.userId}\n\nMondol WiFi Zone থেকে\nমোঃ ইয়াকুব হোসেন\nযোগাযোগ: 01841246223\nসরাসরি কল বা হোয়াটস অ্যাপ`;
                     break;
                 case 'custom':
                     // For custom, don't change the message if it already has content
@@ -957,23 +1187,29 @@
         }
 
         function updateRenewEndDate() {
-            const currentEndDate = document.getElementById('renew-current-end-date').getAttribute('data-date');
+            const renewalStartDate = document.getElementById('renew-start-date').getAttribute('data-date');
             const days = renewPackageDaysInput.value;
             
-            if (currentEndDate && days) {
-                const newEndDate = calculateEndDate(currentEndDate, days);
+            if (renewalStartDate && days) {
+                const newEndDate = calculateEndDate(renewalStartDate, days);
                 renewCalculatedEndDateInput.value = formatDate(newEndDate);
             }
         }
 
-        // Event listeners for date calculation
+        // Event listeners for date calculation and amount updates
         startDateInput.addEventListener('change', updateEndDate);
         packageDaysInput.addEventListener('input', updateEndDate);
+        packageAmountInput.addEventListener('input', updatePendingAmount);
+        paidAmountInput.addEventListener('input', updatePendingAmount);
         
         editStartDateInput.addEventListener('change', updateEditEndDate);
         editPackageDaysInput.addEventListener('input', updateEditEndDate);
+        editPackageAmountInput.addEventListener('input', updateEditPendingAmount);
+        editPaidAmountInput.addEventListener('input', updateEditPendingAmount);
         
         renewPackageDaysInput.addEventListener('input', updateRenewEndDate);
+        renewPackageAmountInput.addEventListener('input', updateRenewPendingAmount);
+        renewPaidAmountInput.addEventListener('input', updateRenewPendingAmount);
 
         // Save user button click
         saveUserBtn.addEventListener('click', () => {
@@ -983,6 +1219,7 @@
             const startDate = document.getElementById('start-date').value;
             const packageDays = document.getElementById('package-days').value;
             const packageAmount = document.getElementById('package-amount').value;
+            const paidAmount = document.getElementById('paid-amount').value || 0;
             const endDate = calculateEndDate(startDate, packageDays);
             
             if (!userId || !userName || !userPhone || !startDate || !packageDays || !packageAmount) {
@@ -1003,6 +1240,7 @@
                 startDate: startDate,
                 packageDays: parseInt(packageDays),
                 packageAmount: parseFloat(packageAmount),
+                paidAmount: parseFloat(paidAmount),
                 endDate: endDate,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 ownerId: currentUser.uid
@@ -1016,6 +1254,7 @@
                     type: 'new',
                     packageDays: parseInt(packageDays),
                     packageAmount: parseFloat(packageAmount),
+                    paidAmount: parseFloat(paidAmount),
                     startDate: startDate,
                     endDate: endDate,
                     connectionNumber: 1,
@@ -1031,7 +1270,9 @@
                 // Reset to default values
                 document.getElementById('package-days').value = 30;
                 document.getElementById('package-amount').value = 250;
+                document.getElementById('paid-amount').value = 250;
                 updateEndDate();
+                updatePendingAmount();
                 showAlert('User added successfully!', 'success');
             })
             .catch((error) => {
@@ -1055,9 +1296,10 @@
             const startDate = document.getElementById('edit-start-date').value;
             const packageDays = document.getElementById('edit-package-days').value;
             const packageAmount = document.getElementById('edit-package-amount').value;
+            const paidAmount = document.getElementById('edit-paid-amount').value;
             const endDate = calculateEndDate(startDate, packageDays);
             
-            if (!userCustomId || !userName || !userPhone || !startDate || !packageDays || !packageAmount) {
+            if (!userCustomId || !userName || !userPhone || !startDate || !packageDays || !packageAmount || !paidAmount) {
                 showAlert('Please fill all fields', 'warning');
                 return;
             }
@@ -1075,6 +1317,7 @@
                 startDate: startDate,
                 packageDays: parseInt(packageDays),
                 packageAmount: parseFloat(packageAmount),
+                paidAmount: parseFloat(paidAmount),
                 endDate: endDate
             })
             .then(() => {
@@ -1086,6 +1329,7 @@
                     type: 'update',
                     packageDays: parseInt(packageDays),
                     packageAmount: parseFloat(packageAmount),
+                    paidAmount: parseFloat(paidAmount),
                     startDate: startDate,
                     endDate: endDate,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1112,10 +1356,11 @@
         // Renew user button click
         renewUserBtn.addEventListener('click', () => {
             const userId = document.getElementById('renew-user-id').value;
-            const currentEndDate = document.getElementById('renew-current-end-date').getAttribute('data-date');
+            const renewalStartDate = document.getElementById('renew-start-date').getAttribute('data-date');
             const packageDays = document.getElementById('renew-package-days').value;
             const packageAmount = document.getElementById('renew-package-amount').value;
-            const newEndDate = calculateEndDate(currentEndDate, packageDays);
+            const paidAmount = document.getElementById('renew-paid-amount').value || 0;
+            const newEndDate = calculateEndDate(renewalStartDate, packageDays);
             const userCustomId = document.getElementById('renew-user-id-field').value;
             const userName = document.getElementById('renew-user-name').value;
             
@@ -1142,6 +1387,7 @@
                     return db.collection('users').doc(userId).update({
                         packageDays: parseInt(packageDays),
                         packageAmount: parseFloat(packageAmount),
+                        paidAmount: parseFloat(paidAmount),
                         endDate: newEndDate
                     });
                 })
@@ -1154,7 +1400,8 @@
                         type: 'renewal',
                         packageDays: parseInt(packageDays),
                         packageAmount: parseFloat(packageAmount),
-                        startDate: currentEndDate,
+                        paidAmount: parseFloat(paidAmount),
+                        startDate: renewalStartDate,
                         endDate: newEndDate,
                         connectionNumber: connectionNumber,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1250,12 +1497,13 @@
                     
                     // Now render users and calculate total amount
                     filteredUsers.forEach(user => {
-                        totalAmount += user.packageAmount || 0;
+                        totalAmount += user.paidAmount || 0;
                         renderUserRow(user);
                     });
                     
                     loadingSpinner.style.display = 'none';
                     updateStats(totalAmount);
+                    updateFilteredCount();
                 }, (error) => {
                     console.error('Error fetching users:', error);
                     loadingSpinner.style.display = 'none';
@@ -1271,6 +1519,15 @@
         // Apply filters to users
         function applyUserFilters(userList) {
             let filtered = [...userList];
+            const searchTerm = userSearchInput.value.toLowerCase().trim();
+            
+            // Search filter
+            if (searchTerm) {
+                filtered = filtered.filter(user => 
+                    user.userId?.toLowerCase().includes(searchTerm) || 
+                    user.name?.toLowerCase().includes(searchTerm)
+                );
+            }
             
             // Status filter
             if (currentFilters.status !== 'all') {
@@ -1319,14 +1576,8 @@
             
             // Reload the table with filtered data
             filteredUsers = applyUserFilters(users);
-            usersTableBody.innerHTML = '';
-            
-            if (filteredUsers.length === 0) {
-                noUsersRow.classList.remove('d-none');
-            } else {
-                noUsersRow.classList.add('d-none');
-                filteredUsers.forEach(user => renderUserRow(user));
-            }
+            renderUsersTable();
+            updateFilteredCount();
             
             showAlert('Filters applied successfully!', 'success');
         }
@@ -1336,6 +1587,7 @@
             statusFilter.value = 'all';
             startDateFilter.value = '';
             endDateFilter.value = '';
+            userSearchInput.value = '';
             
             currentFilters = {
                 status: 'all',
@@ -1345,6 +1597,26 @@
             
             // Reload the table with all data
             filteredUsers = [...users];
+            renderUsersTable();
+            updateFilteredCount();
+            
+            showAlert('Filters reset successfully!', 'info');
+        }
+
+        // Update filtered count display
+        function updateFilteredCount() {
+            const total = users.length;
+            const filtered = filteredUsers.length;
+            
+            if (filtered === total) {
+                filteredCount.textContent = `Showing all ${total} users`;
+            } else {
+                filteredCount.textContent = `Showing ${filtered} of ${total} users`;
+            }
+        }
+
+        // Function to render all users in table
+        function renderUsersTable() {
             usersTableBody.innerHTML = '';
             
             if (filteredUsers.length === 0) {
@@ -1353,8 +1625,6 @@
                 noUsersRow.classList.add('d-none');
                 filteredUsers.forEach(user => renderUserRow(user));
             }
-            
-            showAlert('Filters reset successfully!', 'info');
         }
 
         // Function to render a user row in the table
@@ -1377,12 +1647,24 @@
                 statusText = 'Expiring Soon';
             }
             
+            // Calculate pending amount
+            const pendingAmount = calculatePendingAmount(user.packageAmount, user.paidAmount || 0);
+            
+            // Mask user ID if needed
+            const displayUserId = isMasked ? 
+                `<span class="masked-id">${maskUserId(user.userId)}</span>` : 
+                `<span class="masked-id revealed">${user.userId}</span>`;
+            
             row.innerHTML = `
-                <td>${user.userId || 'N/A'}</td>
+                <td>${displayUserId}</td>
                 <td>${user.name}</td>
                 <td>${user.phone}</td>
                 <td>${user.packageDays} days</td>
-                <td>৳${user.packageAmount}</td>
+                <td>
+                    <div>Package: ৳${user.packageAmount}</div>
+                    <div class="paid-amount">Paid: ৳${user.paidAmount || 0}</div>
+                    ${pendingAmount > 0 ? `<div class="pending-amount">Pending: ৳${pendingAmount}</div>` : ''}
+                </td>
                 <td class="date-display">${formatDate(user.startDate)}</td>
                 <td class="date-display">${formatDate(user.endDate)}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
@@ -1395,6 +1677,9 @@
                     </button>
                     <button class="btn btn-sm btn-outline-info action-btn history-user" data-id="${user.id}" title="View History">
                         <i class="fas fa-history"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-dark action-btn payment-history" data-id="${user.id}" title="Payment History">
+                        <i class="fas fa-money-bill"></i>
                     </button>
                     ${daysUntilExpiry <= 0 ? 
                         `<button class="btn btn-sm btn-warning action-btn renew-user" data-id="${user.id}" title="Renew Package">
@@ -1412,12 +1697,23 @@
             row.querySelector('.edit-user').addEventListener('click', () => editUser(user.id));
             row.querySelector('.send-sms').addEventListener('click', () => openSmsModal(user));
             row.querySelector('.history-user').addEventListener('click', () => openHistoryModal(user));
+            row.querySelector('.payment-history').addEventListener('click', () => openPaymentHistoryModal(user));
             if (daysUntilExpiry <= 0) {
                 row.querySelector('.renew-user').addEventListener('click', () => openRenewModal(user));
             }
             row.querySelector('.delete-user').addEventListener('click', () => deleteUser(user.id));
             
             noUsersRow.classList.add('d-none');
+        }
+
+        // Function to mask user ID
+        function maskUserId(userId) {
+            if (!userId) return 'N/A';
+            if (userId.length <= 4) return userId;
+            
+            const visibleChars = Math.min(2, Math.floor(userId.length / 3));
+            const maskedPart = '*'.repeat(userId.length - visibleChars * 2);
+            return userId.substring(0, visibleChars) + maskedPart + userId.substring(userId.length - visibleChars);
         }
 
         // Function to update statistics
@@ -1453,9 +1749,11 @@
                 document.getElementById('edit-start-date').value = user.startDate;
                 document.getElementById('edit-package-days').value = user.packageDays;
                 document.getElementById('edit-package-amount').value = user.packageAmount;
+                document.getElementById('edit-paid-amount').value = user.paidAmount || 0;
                 
-                // Calculate and set end date
+                // Calculate and set end date and pending amount
                 editCalculatedEndDateInput.value = formatDate(user.endDate);
+                updateEditPendingAmount();
                 
                 const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
                 editModal.show();
@@ -1467,19 +1765,24 @@
             document.getElementById('renew-user-id').value = user.id;
             document.getElementById('renew-user-id-field').value = user.userId || 'N/A';
             document.getElementById('renew-user-name').value = user.name;
-            document.getElementById('renew-current-end-date').value = formatDate(user.endDate);
-            document.getElementById('renew-current-end-date').setAttribute('data-date', user.endDate);
+            
+            // Set renewal start date to current end date
+            document.getElementById('renew-start-date').value = formatDate(user.endDate);
+            document.getElementById('renew-start-date').setAttribute('data-date', user.endDate);
+            
             document.getElementById('renew-package-days').value = 30;
             document.getElementById('renew-package-amount').value = 250;
+            document.getElementById('renew-paid-amount').value = 250;
             
-            // Calculate and set new end date
+            // Calculate and set new end date and pending amount
             updateRenewEndDate();
+            updateRenewPendingAmount();
             
             const renewModal = new bootstrap.Modal(document.getElementById('renewUserModal'));
             renewModal.show();
         }
 
-        // Function to open history modal - FIXED VERSION (No Index Required)
+        // Function to open history modal
         function openHistoryModal(user) {
             document.getElementById('history-user-name').textContent = user.name;
             document.getElementById('history-user-id').textContent = user.userId || 'N/A';
@@ -1492,10 +1795,23 @@
             historyModal.show();
         }
 
+        // Function to open payment history modal
+        function openPaymentHistoryModal(user) {
+            document.getElementById('payment-history-user-name').textContent = user.name;
+            document.getElementById('payment-history-user-id').textContent = user.userId || 'N/A';
+            document.getElementById('payment-history-user-phone').textContent = user.phone;
+            
+            // Load payment history
+            loadPaymentHistory(user.id);
+            
+            const paymentModal = new bootstrap.Modal(document.getElementById('paymentHistoryModal'));
+            paymentModal.show();
+        }
+
         // Function to load user history - SIMPLE VERSION (No Index Required)
         function loadUserHistorySimple(userId) {
             const historyBody = document.getElementById('user-history-body');
-            historyBody.innerHTML = '<tr><td colspan="7" class="text-center">Loading history...</td></tr>';
+            historyBody.innerHTML = '<tr><td colspan="8" class="text-center">Loading history...</td></tr>';
             
             // Reset summary
             document.getElementById('history-total-connections').textContent = '0';
@@ -1510,7 +1826,7 @@
                     historyBody.innerHTML = '';
                     
                     if (snapshot.empty) {
-                        historyBody.innerHTML = '<tr><td colspan="7" class="text-center">No history found</td></tr>';
+                        historyBody.innerHTML = '<tr><td colspan="8" class="text-center">No history found</td></tr>';
                         return;
                     }
                     
@@ -1559,13 +1875,14 @@
                         }
                         
                         // Add to total amount
-                        totalAmount += history.packageAmount || 0;
+                        totalAmount += history.paidAmount || 0;
                         
                         row.innerHTML = `
                             <td class="date-display">${formatDate(history.timestamp?.toDate())}</td>
                             <td><span class="${typeClass}">${typeText}</span></td>
                             <td>${history.packageDays} days</td>
                             <td>৳${history.packageAmount}</td>
+                            <td>৳${history.paidAmount || 0}</td>
                             <td class="date-display">${formatDate(history.startDate)}</td>
                             <td class="date-display">${formatDate(history.endDate)}</td>
                             <td>${history.connectionNumber || '-'}</td>
@@ -1581,11 +1898,107 @@
                 })
                 .catch((error) => {
                     console.error('Error loading history:', error);
-                    historyBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading history: ' + error.message + '</td></tr>';
+                    historyBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading history: ' + error.message + '</td></tr>';
                 });
         }
 
-        // Function to open SMS modal - FIXED VERSION
+        // Function to load payment history
+        function loadPaymentHistory(userId) {
+            const historyBody = document.getElementById('payment-history-body');
+            historyBody.innerHTML = '<tr><td colspan="7" class="text-center">Loading payment history...</td></tr>';
+            
+            // Reset summary
+            document.getElementById('payment-history-total-package').textContent = '৳0';
+            document.getElementById('payment-history-total-paid').textContent = '৳0';
+            document.getElementById('payment-history-total-pending').textContent = '৳0';
+            
+            // Simple query without ordering - will use default order
+            db.collection('userHistory')
+                .where('userId', '==', userId)
+                .get()
+                .then((snapshot) => {
+                    historyBody.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        historyBody.innerHTML = '<tr><td colspan="7" class="text-center">No payment history found</td></tr>';
+                        return;
+                    }
+                    
+                    let totalPackage = 0;
+                    let totalPaid = 0;
+                    let totalPending = 0;
+                    const historyItems = [];
+                    
+                    snapshot.forEach((doc) => {
+                        historyItems.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    // Sort by timestamp descending on client side
+                    historyItems.sort((a, b) => {
+                        const timeA = a.timestamp?.toMillis() || 0;
+                        const timeB = b.timestamp?.toMillis() || 0;
+                        return timeB - timeA;
+                    });
+                    
+                    historyItems.forEach((history) => {
+                        const row = document.createElement('tr');
+                        
+                        let typeText = '';
+                        let typeClass = '';
+                        
+                        switch(history.type) {
+                            case 'new': 
+                                typeText = 'New Connection';
+                                typeClass = 'text-success';
+                                break;
+                            case 'update': 
+                                typeText = 'Updated';
+                                typeClass = 'text-primary';
+                                break;
+                            case 'renewal': 
+                                typeText = 'Renewed';
+                                typeClass = 'text-warning';
+                                break;
+                            default: 
+                                typeText = history.type;
+                        }
+                        
+                        // Calculate pending amount for this transaction
+                        const pendingAmount = calculatePendingAmount(history.packageAmount, history.paidAmount || 0);
+                        
+                        // Add to totals
+                        totalPackage += history.packageAmount || 0;
+                        totalPaid += history.paidAmount || 0;
+                        totalPending += pendingAmount;
+                        
+                        row.innerHTML = `
+                            <td class="date-display">${formatDate(history.timestamp?.toDate())}</td>
+                            <td><span class="${typeClass}">${typeText}</span></td>
+                            <td>৳${history.packageAmount}</td>
+                            <td class="${history.paidAmount > 0 ? 'paid-amount' : ''}">৳${history.paidAmount || 0}</td>
+                            <td class="${pendingAmount > 0 ? 'pending-amount' : ''}">৳${pendingAmount}</td>
+                            <td class="date-display">${formatDate(history.startDate)}</td>
+                            <td class="date-display">${formatDate(history.endDate)}</td>
+                        `;
+                        
+                        historyBody.appendChild(row);
+                    });
+                    
+                    // Update summary
+                    document.getElementById('payment-history-total-package').textContent = `৳${totalPackage}`;
+                    document.getElementById('payment-history-total-paid').textContent = `৳${totalPaid}`;
+                    document.getElementById('payment-history-total-pending').textContent = `৳${totalPending}`;
+                })
+                .catch((error) => {
+                    console.error('Error loading payment history:', error);
+                    historyBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading payment history: ' + error.message + '</td></tr>';
+                });
+        }
+
+        // Function to open SMS modal
         function openSmsModal(user) {
             currentSmsUser = user;
             document.getElementById('sms-recipient').value = `${user.name} (${user.phone})`;
@@ -1674,6 +2087,7 @@
             
             startDateInput.value = todayFormatted;
             updateEndDate();
+            updatePendingAmount();
             
             console.log('App initialized');
         });
