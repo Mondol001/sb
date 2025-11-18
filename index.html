@@ -762,8 +762,8 @@
                             <input type="text" class="form-control" id="renew-user-name" readonly>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Renewal Start Date</label>
-                            <input type="text" class="form-control date-display" id="renew-start-date" readonly>
+                            <label for="renew-start-date" class="form-label">Renewal Start Date</label>
+                            <input type="date" class="form-control" id="renew-start-date" required>
                         </div>
                         <div class="mb-3">
                             <label for="renew-package-days" class="form-label">Renewal Duration (Days)</label>
@@ -1050,6 +1050,7 @@
         const editPendingAmountInput = document.getElementById('edit-pending-amount');
         const editCalculatedEndDateInput = document.getElementById('edit-calculated-end-date');
         
+        const renewStartDateInput = document.getElementById('renew-start-date');
         const renewPackageDaysInput = document.getElementById('renew-package-days');
         const renewPackageAmountInput = document.getElementById('renew-package-amount');
         const renewPaidAmountInput = document.getElementById('renew-paid-amount');
@@ -1313,7 +1314,7 @@
         }
 
         function updateRenewEndDate() {
-            const renewalStartDate = document.getElementById('renew-start-date').getAttribute('data-date');
+            const renewalStartDate = renewStartDateInput.value;
             const days = renewPackageDaysInput.value;
             
             if (renewalStartDate && days) {
@@ -1332,6 +1333,7 @@
         editPackageDaysInput.addEventListener('input', updateEditEndDate);
         editPackageAmountInput.addEventListener('input', updateEditPendingAmount);
         
+        renewStartDateInput.addEventListener('change', updateRenewEndDate);
         renewPackageDaysInput.addEventListener('input', updateRenewEndDate);
         renewPackageAmountInput.addEventListener('input', updateRenewPendingAmount);
         renewPaidAmountInput.addEventListener('input', updateRenewPendingAmount);
@@ -1507,7 +1509,7 @@
         // Renew user button click
         renewUserBtn.addEventListener('click', () => {
             const userId = document.getElementById('renew-user-id').value;
-            const renewalStartDate = document.getElementById('renew-start-date').getAttribute('data-date');
+            const renewalStartDate = renewStartDateInput.value;
             const packageDays = document.getElementById('renew-package-days').value;
             const packageAmount = document.getElementById('renew-package-amount').value;
             const paidAmount = document.getElementById('renew-paid-amount').value || 0;
@@ -1515,7 +1517,7 @@
             const userCustomId = document.getElementById('renew-user-id-field').value;
             const userName = document.getElementById('renew-user-name').value;
             
-            if (!packageDays || !packageAmount) {
+            if (!renewalStartDate || !packageDays || !packageAmount) {
                 showAlert('Please fill all fields', 'warning');
                 return;
             }
@@ -2054,9 +2056,10 @@
             document.getElementById('renew-user-id-field').value = user.userId || 'N/A';
             document.getElementById('renew-user-name').value = user.name;
             
-            // Set renewal start date to current end date
-            document.getElementById('renew-start-date').value = formatDate(user.endDate);
-            document.getElementById('renew-start-date').setAttribute('data-date', user.endDate);
+            // Set renewal start date to current end date by default, but allow editing
+            const today = new Date();
+            const defaultStartDate = user.endDate || today.toISOString().split('T')[0];
+            renewStartDateInput.value = defaultStartDate;
             
             document.getElementById('renew-package-days').value = 30;
             document.getElementById('renew-package-amount').value = 250;
