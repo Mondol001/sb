@@ -35,13 +35,15 @@
         
         .card {
             border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
         }
         
         .card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
         }
         
         .btn-primary {
@@ -103,29 +105,34 @@
         }
         
         .status-badge {
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
+            border: 1px solid;
         }
         
         .status-active {
-            background-color: rgba(76, 201, 240, 0.2);
-            color: var(--primary-color);
+            background-color: rgba(75, 181, 67, 0.1);
+            border-color: #4bb543;
+            color: #4bb543;
         }
         
         .status-expiring {
-            background-color: rgba(255, 204, 0, 0.2);
+            background-color: rgba(255, 204, 0, 0.1);
+            border-color: #ffcc00;
             color: #b38f00;
         }
         
         .status-expired {
-            background-color: rgba(220, 53, 69, 0.2);
+            background-color: rgba(220, 53, 69, 0.1);
+            border-color: #dc3545;
             color: var(--danger-color);
         }
         
         .status-inactive {
-            background-color: rgba(108, 117, 125, 0.2);
+            background-color: rgba(108, 117, 125, 0.1);
+            border-color: #6c757d;
             color: #6c757d;
         }
         
@@ -331,6 +338,107 @@
             background-color: #fff;
             border-bottom-color: #fff;
         }
+
+        /* Improved UI Styles */
+        .gradient-header {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .status-active .status-indicator { background-color: #4bb543; }
+        .status-expiring .status-indicator { background-color: #ffcc00; }
+        .status-expired .status-indicator { background-color: #dc3545; }
+        .status-inactive .status-indicator { background-color: #6c757d; }
+
+        .amount-breakdown {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        .payment-progress {
+            height: 6px;
+            border-radius: 3px;
+            background-color: #e9ecef;
+            margin: 5px 0;
+        }
+
+        .payment-progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #4bb543, #45a049);
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn-sm {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-radius: 6px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        /* Bengali Font Support */
+        .bangla-font {
+            font-family: 'Segoe UI', 'SolaimanLipi', 'Siyam Rupali', 'Kalpurush', sans-serif;
+        }
+
+        /* Improved Table Styles */
+        .table-improved {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table-improved th {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 12px 15px;
+        }
+
+        .table-improved td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        .table-improved tr:hover td {
+            background-color: #f8f9fa;
+        }
+
+        .change-highlight {
+            background-color: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -532,31 +640,29 @@
 
                     <!-- Active Users Table -->
                     <div class="card">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0"><i class="fas fa-users me-2"></i>Active Users Management</h5>
+                        <div class="card-header gradient-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 text-white"><i class="fas fa-users me-2"></i>Active Users Management</h5>
                             <div>
                                 <span class="badge bg-light text-dark" id="filtered-count">Showing all active users</span>
                             </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0">
+                                <table class="table table-hover mb-0 table-improved">
                                     <thead class="table-fixed-header">
                                         <tr>
-                                            <th>ID</th>
+                                            <th>User Info</th>
                                             <th>Name</th>
-                                            <th>Phone</th>
-                                            <th>Package</th>
-                                            <th>Amount</th>
+                                            <th>Package & Payment</th>
+                                            <th>Status</th>
                                             <th>Start Date</th>
                                             <th>End Date</th>
-                                            <th>Status</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="users-table-body">
                                         <tr id="no-users-row">
-                                            <td colspan="9" class="text-center py-4 text-muted">
+                                            <td colspan="7" class="text-center py-4 text-muted">
                                                 <i class="fas fa-users fa-2x mb-3"></i>
                                                 <p>No active users found.</p>
                                             </td>
@@ -572,31 +678,29 @@
                 <div class="tab-pane fade" id="inactive-users-tab" role="tabpanel">
                     <!-- Inactive Users Table -->
                     <div class="card">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0"><i class="fas fa-user-times me-2"></i>Inactive Users</h5>
+                        <div class="card-header gradient-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 text-white"><i class="fas fa-user-times me-2"></i>Inactive Users</h5>
                             <div>
                                 <span class="badge bg-light text-dark" id="inactive-count">0 inactive users</span>
                             </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0">
+                                <table class="table table-hover mb-0 table-improved">
                                     <thead class="table-fixed-header">
                                         <tr>
-                                            <th>ID</th>
+                                            <th>User Info</th>
                                             <th>Name</th>
-                                            <th>Phone</th>
-                                            <th>Package</th>
-                                            <th>Amount</th>
+                                            <th>Package & Payment</th>
+                                            <th>Status</th>
                                             <th>Start Date</th>
                                             <th>End Date</th>
-                                            <th>Status</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="inactive-users-table-body">
                                         <tr id="no-inactive-users-row">
-                                            <td colspan="9" class="text-center py-4 text-muted">
+                                            <td colspan="7" class="text-center py-4 text-muted">
                                                 <i class="fas fa-user-times fa-2x mb-3"></i>
                                                 <p>No inactive users found.</p>
                                             </td>
@@ -685,36 +789,36 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit User</h5>
+                    <h5 class="modal-title">Edit User - Select Fields to Update</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="edit-user-form">
                         <input type="hidden" id="edit-user-id">
                         <div class="mb-3">
-                            <label for="edit-user-id-field" class="form-label">User ID</label>
-                            <input type="text" class="form-control" id="edit-user-id-field" required>
+                            <label class="form-label">User ID (Current: <span id="current-user-id" class="change-highlight"></span>)</label>
+                            <input type="text" class="form-control" id="edit-user-id-field" placeholder="Enter new User ID if changing">
                         </div>
                         <div class="mb-3">
-                            <label for="edit-user-name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="edit-user-name" required>
+                            <label class="form-label">Full Name (Current: <span id="current-user-name" class="change-highlight"></span>)</label>
+                            <input type="text" class="form-control" id="edit-user-name" placeholder="Enter new name if changing">
                         </div>
                         <div class="mb-3">
-                            <label for="edit-user-phone" class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="edit-user-phone" required>
+                            <label class="form-label">Phone Number (Current: <span id="current-user-phone" class="change-highlight"></span>)</label>
+                            <input type="tel" class="form-control" id="edit-user-phone" placeholder="Enter new phone if changing">
                         </div>
                         <div class="mb-3">
-                            <label for="edit-start-date" class="form-label">Connection Date</label>
-                            <input type="date" class="form-control" id="edit-start-date" required>
+                            <label class="form-label">Connection Date (Current: <span id="current-start-date" class="change-highlight"></span>)</label>
+                            <input type="date" class="form-control" id="edit-start-date">
                         </div>
                         <div class="mb-3">
-                            <label for="edit-package-days" class="form-label">Package Duration (Days)</label>
-                            <input type="number" class="form-control" id="edit-package-days" min="1" required>
+                            <label class="form-label">Package Duration (Current: <span id="current-package-days" class="change-highlight"></span> days)</label>
+                            <input type="number" class="form-control" id="edit-package-days" min="1" placeholder="Enter new duration if changing">
                         </div>
                         <div class="amount-section">
                             <div class="mb-3">
-                                <label for="edit-package-amount" class="form-label">Package Amount (৳)</label>
-                                <input type="number" class="form-control" id="edit-package-amount" min="0" required>
+                                <label class="form-label">Package Amount (Current: <span id="current-package-amount" class="change-highlight"></span> ৳)</label>
+                                <input type="number" class="form-control" id="edit-package-amount" min="0" placeholder="Enter new amount if changing">
                             </div>
                             <div class="mb-0">
                                 <label class="form-label">Paid Amount</label>
@@ -726,7 +830,7 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">End Date</label>
+                            <label class="form-label">End Date (Current: <span id="current-end-date" class="change-highlight"></span>)</label>
                             <input type="text" class="form-control date-display" id="edit-calculated-end-date" readonly>
                         </div>
                     </form>
@@ -734,7 +838,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="update-user-btn">
-                        <span id="update-user-text">Update User</span>
+                        <span id="update-user-text">Update Selected Fields</span>
                         <span id="update-user-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
                     </button>
                 </div>
@@ -1119,7 +1223,7 @@
             }
         }
 
-        // Update pending amount in renew user form
+        // Update pending amount in renew user form - FIXED VERSION
         function updateRenewPendingAmount() {
             const packageAmount = parseFloat(renewPackageAmountInput.value) || 0;
             const paidAmount = parseFloat(renewPaidAmountInput.value) || 0;
@@ -1417,19 +1521,71 @@
             });
         });
 
-        // Update user button click - WITH HISTORY ENTRY FOR CHANGES
+        // Update user button click - WITH IMPROVED CHANGE TRACKING
         updateUserBtn.addEventListener('click', () => {
             const userId = document.getElementById('edit-user-id').value;
-            const userCustomId = document.getElementById('edit-user-id-field').value;
-            const userName = document.getElementById('edit-user-name').value;
-            const userPhone = document.getElementById('edit-user-phone').value;
-            const startDate = document.getElementById('edit-start-date').value;
-            const packageDays = document.getElementById('edit-package-days').value;
-            const packageAmount = document.getElementById('edit-package-amount').value;
+            const userCustomId = document.getElementById('edit-user-id-field').value || document.getElementById('current-user-id').textContent;
+            const userName = document.getElementById('edit-user-name').value || document.getElementById('current-user-name').textContent;
+            const userPhone = document.getElementById('edit-user-phone').value || document.getElementById('current-user-phone').textContent;
+            const startDate = document.getElementById('edit-start-date').value || document.getElementById('current-start-date').textContent;
+            const packageDays = document.getElementById('edit-package-days').value || document.getElementById('current-package-days').textContent.replace(' days', '');
+            const packageAmount = document.getElementById('edit-package-amount').value || document.getElementById('current-package-amount').textContent.replace(' ৳', '');
             const endDate = calculateEndDate(startDate, packageDays);
             
-            if (!userCustomId || !userName || !userPhone || !startDate || !packageDays || !packageAmount) {
-                showAlert('Please fill all fields', 'warning');
+            // Get current user data to compare changes
+            const currentUserData = users.find(u => u.id === userId);
+            let updateData = {};
+            let changes = [];
+            
+            // Check for changes and build update data
+            if (userCustomId !== currentUserData.userId && document.getElementById('edit-user-id-field').value) {
+                updateData.userId = userCustomId;
+                changes.push(`ইউজার আইডি: "${currentUserData.userId}" → "${userCustomId}"`);
+            }
+            
+            if (userName !== currentUserData.name && document.getElementById('edit-user-name').value) {
+                updateData.name = userName;
+                changes.push(`নাম: "${currentUserData.name}" → "${userName}"`);
+            }
+            
+            if (userPhone !== currentUserData.phone && document.getElementById('edit-user-phone').value) {
+                updateData.phone = userPhone;
+                changes.push(`ফোন নম্বর: "${currentUserData.phone}" → "${userPhone}"`);
+            }
+            
+            if (startDate !== currentUserData.startDate && document.getElementById('edit-start-date').value) {
+                updateData.startDate = startDate;
+                changes.push(`শুরুর তারিখ: "${formatDate(currentUserData.startDate)}" → "${formatDate(startDate)}"`);
+            }
+            
+            if (parseInt(packageDays) !== currentUserData.packageDays && document.getElementById('edit-package-days').value) {
+                updateData.packageDays = parseInt(packageDays);
+                changes.push(`প্যাকেজ ডিউরেশন: "${currentUserData.packageDays} দিন" → "${packageDays} দিন"`);
+            }
+            
+            if (parseFloat(packageAmount) !== currentUserData.packageAmount && document.getElementById('edit-package-amount').value) {
+                updateData.packageAmount = parseFloat(packageAmount);
+                changes.push(`প্যাকেজ মূল্য: "৳${currentUserData.packageAmount}" → "৳${packageAmount}"`);
+            }
+            
+            // Always update end date if start date or package days changed
+            if (updateData.startDate || updateData.packageDays) {
+                updateData.endDate = endDate;
+                changes.push(`শেষ তারিখ: "${formatDate(currentUserData.endDate)}" → "${formatDate(endDate)}"`);
+            }
+            
+            // If no changes, just close the modal
+            if (changes.length === 0) {
+                bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+                showAlert('কোনো পরিবর্তন করা হয়নি!', 'info');
+                return;
+            }
+            
+            // Show confirmation with changes summary
+            const changeSummary = changes.join('\n• ');
+            const confirmed = confirm(`আপনি নিচের পরিবর্তনগুলো করতে চাচ্ছেন:\n\n• ${changeSummary}\n\nসত্যিই আপডেট করতে চান?`);
+            
+            if (!confirmed) {
                 return;
             }
             
@@ -1438,65 +1594,32 @@
             document.getElementById('update-user-spinner').classList.remove('d-none');
             updateUserBtn.disabled = true;
             
-            // Get current user data to compare changes
-            const currentUserData = users.find(u => u.id === userId);
-            let changes = [];
-            
-            // Check for changes
-            if (currentUserData.userId !== userCustomId) {
-                changes.push(`User ID: ${currentUserData.userId} → ${userCustomId}`);
-            }
-            if (currentUserData.name !== userName) {
-                changes.push(`Name: ${currentUserData.name} → ${userName}`);
-            }
-            if (currentUserData.phone !== userPhone) {
-                changes.push(`Phone: ${currentUserData.phone} → ${userPhone}`);
-            }
-            if (currentUserData.startDate !== startDate) {
-                changes.push(`Start Date: ${formatDate(currentUserData.startDate)} → ${formatDate(startDate)}`);
-            }
-            if (currentUserData.packageDays !== parseInt(packageDays)) {
-                changes.push(`Package Days: ${currentUserData.packageDays} → ${packageDays}`);
-            }
-            if (currentUserData.packageAmount !== parseFloat(packageAmount)) {
-                changes.push(`Package Amount: ৳${currentUserData.packageAmount} → ৳${packageAmount}`);
-            }
-            if (currentUserData.endDate !== endDate) {
-                changes.push(`End Date: ${formatDate(currentUserData.endDate)} → ${formatDate(endDate)}`);
-            }
-            
             // Update user in Firestore
-            db.collection('users').doc(userId).update({
-                userId: userCustomId,
-                name: userName,
-                phone: userPhone,
-                startDate: startDate,
-                packageDays: parseInt(packageDays),
-                packageAmount: parseFloat(packageAmount),
-                endDate: endDate
-            })
+            db.collection('users').doc(userId).update(updateData)
             .then(() => {
-                // If there are changes, add to history
-                if (changes.length > 0) {
-                    return db.collection('userHistory').add({
-                        userId: userId,
-                        userCustomId: userCustomId,
-                        userName: userName,
-                        type: 'update',
-                        changes: changes,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        ownerId: currentUser.uid
-                    });
-                }
+                // Add detailed changes to history
+                return db.collection('userHistory').add({
+                    userId: userId,
+                    userCustomId: userCustomId,
+                    userName: userName,
+                    type: 'update',
+                    changes: changes,
+                    changeSummary: changeSummary,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    ownerId: currentUser.uid
+                });
             })
             .then(() => {
                 // Close modal
                 bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
-                showAlert('User updated successfully!', 'success');
+                
+                // Show success message with changes count
+                const changeCount = changes.length;
+                showAlert(`সফলভাবে ${changeCount}টি ফিল্ড আপডেট করা হয়েছে!`, 'success');
             })
             .catch((error) => {
                 console.error('Error updating user: ', error);
-                showAlert('Error updating user. Please try again.', 'danger');
+                showAlert('ব্যবহারকারী আপডেট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।', 'danger');
             })
             .finally(() => {
                 // Reset button state
@@ -1506,7 +1629,7 @@
             });
         });
 
-        // Renew user button click
+        // Renew user button click - FIXED VERSION
         renewUserBtn.addEventListener('click', () => {
             const userId = document.getElementById('renew-user-id').value;
             const renewalStartDate = renewStartDateInput.value;
@@ -1536,11 +1659,12 @@
                 .then((snapshot) => {
                     connectionNumber = snapshot.size + 1;
                     
-                    // Update user in Firestore
+                    // Update user in Firestore - SET paidAmount to new value, don't increment
                     return db.collection('users').doc(userId).update({
+                        startDate: renewalStartDate,
                         packageDays: parseInt(packageDays),
                         packageAmount: parseFloat(packageAmount),
-                        paidAmount: firebase.firestore.FieldValue.increment(parseFloat(paidAmount)),
+                        paidAmount: parseFloat(paidAmount), // This sets the paid amount to the new value
                         endDate: newEndDate,
                         active: true // Reactivate if inactive
                     });
@@ -1874,6 +1998,7 @@
         // Function to render a user row in the table
         function renderUserRow(user) {
             const row = document.createElement('tr');
+            row.className = 'user-row';
             
             // Calculate status
             const today = new Date();
@@ -1881,18 +2006,22 @@
             const daysUntilExpiry = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
             
             let statusClass = 'status-active';
-            let statusText = 'Active';
+            let statusText = 'সক্রিয়';
             
             if (daysUntilExpiry <= 0) {
                 statusClass = 'status-expired';
-                statusText = 'Expired';
+                statusText = 'মেয়াদ শেষ';
             } else if (daysUntilExpiry <= 5) {
                 statusClass = 'status-expiring';
-                statusText = 'Expiring Soon';
+                statusText = `${daysUntilExpiry} দিন বাকি`;
             }
             
-            // Calculate pending amount
+            // Calculate pending amount and progress
             const pendingAmount = calculatePendingAmount(user.packageAmount, user.paidAmount || 0);
+            const paymentProgress = ((user.paidAmount || 0) / user.packageAmount) * 100;
+            
+            // Get first letter for avatar
+            const avatarLetter = user.name ? user.name.charAt(0).toUpperCase() : 'U';
             
             // Mask user ID if needed
             const displayUserId = isMasked ? 
@@ -1900,39 +2029,75 @@
                 `<span class="masked-id revealed">${user.userId}</span>`;
             
             row.innerHTML = `
-                <td>${displayUserId}</td>
-                <td>${user.name}</td>
-                <td>${user.phone}</td>
-                <td>${user.packageDays} days</td>
                 <td>
-                    <div>Package: ৳${user.packageAmount}</div>
-                    <div class="paid-amount">Paid: ৳${user.paidAmount || 0}</div>
-                    ${pendingAmount > 0 ? `<div class="pending-amount">Pending: ৳${pendingAmount}</div>` : ''}
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar">${avatarLetter}</div>
+                        <div>
+                            <div class="fw-bold">${displayUserId}</div>
+                            <small class="text-muted">${user.phone}</small>
+                        </div>
+                    </div>
+                </td>
+                <td class="bangla-font">${user.name}</td>
+                <td>
+                    <div class="amount-breakdown">
+                        <div class="d-flex justify-content-between">
+                            <small>প্যাকেজ:</small>
+                            <small class="fw-bold">৳${user.packageAmount}</small>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small>পরিশোধ:</small>
+                            <small class="paid-amount">৳${user.paidAmount || 0}</small>
+                        </div>
+                        ${pendingAmount > 0 ? `
+                            <div class="d-flex justify-content-between">
+                                <small>বাকি:</small>
+                                <small class="pending-amount fw-bold">৳${pendingAmount}</small>
+                            </div>
+                            <div class="payment-progress">
+                                <div class="payment-progress-bar" style="width: ${paymentProgress}%"></div>
+                            </div>
+                        ` : `
+                            <div class="text-success text-center">
+                                <small><i class="fas fa-check-circle"></i> সম্পূর্ণ পরিশোধিত</small>
+                            </div>
+                        `}
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge ${statusClass}">
+                        <span class="status-indicator"></span>
+                        ${statusText}
+                    </span>
+                    <div class="small text-muted mt-1">${user.packageDays} দিন</div>
                 </td>
                 <td class="date-display">${formatDate(user.startDate)}</td>
-                <td class="date-display">${formatDate(user.endDate)}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td class="date-display ${daysUntilExpiry <= 0 ? 'text-danger fw-bold' : ''}">
+                    ${formatDate(user.endDate)}
+                </td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary action-btn edit-user" data-id="${user.id}" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-success action-btn send-sms" data-id="${user.id}" title="Send SMS">
-                        <i class="fas fa-sms"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-info action-btn history-user" data-id="${user.id}" title="View History">
-                        <i class="fas fa-history"></i>
-                    </button>
-                    ${pendingAmount > 0 ? 
-                        `<button class="btn btn-sm btn-success action-btn add-payment" data-id="${user.id}" title="Add Payment">
-                            <i class="fas fa-money-bill"></i>
-                        </button>` : ''}
-                    ${daysUntilExpiry <= 0 ? 
-                        `<button class="btn btn-sm btn-warning action-btn renew-user" data-id="${user.id}" title="Renew Package">
-                            <i class="fas fa-redo"></i>
-                        </button>` : ''}
-                    <button class="btn btn-sm btn-secondary action-btn deactivate-user" data-id="${user.id}" title="Deactivate">
-                        <i class="fas fa-user-times"></i>
-                    </button>
+                    <div class="quick-actions">
+                        <button class="btn btn-sm btn-outline-primary action-btn-sm edit-user" data-id="${user.id}" title="এডিট">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success action-btn-sm send-sms" data-id="${user.id}" title="এসএমএস">
+                            <i class="fas fa-sms"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-info action-btn-sm history-user" data-id="${user.id}" title="ইতিহাস">
+                            <i class="fas fa-history"></i>
+                        </button>
+                        ${pendingAmount > 0 ? 
+                            `<button class="btn btn-sm btn-success action-btn-sm add-payment" data-id="${user.id}" title="পেমেন্ট">
+                                <i class="fas fa-money-bill"></i>
+                            </button>` : ''}
+                        ${daysUntilExpiry <= 10 ? 
+                            `<button class="btn btn-sm btn-warning action-btn-sm renew-user" data-id="${user.id}" title="নবায়ন">
+                                <i class="fas fa-redo"></i>
+                            </button>` : ''}
+                        <button class="btn btn-sm btn-outline-secondary action-btn-sm deactivate-user" data-id="${user.id}" title="নিষ্ক্রিয়">
+                            <i class="fas fa-user-times"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             
@@ -1945,7 +2110,7 @@
             if (pendingAmount > 0) {
                 row.querySelector('.add-payment').addEventListener('click', () => openPaymentModal(user));
             }
-            if (daysUntilExpiry <= 0) {
+            if (daysUntilExpiry <= 10) {
                 row.querySelector('.renew-user').addEventListener('click', () => openRenewModal(user));
             }
             row.querySelector('.deactivate-user').addEventListener('click', () => deactivateUser(user.id));
@@ -1960,31 +2125,65 @@
             // Calculate pending amount
             const pendingAmount = calculatePendingAmount(user.packageAmount, user.paidAmount || 0);
             
+            // Get first letter for avatar
+            const avatarLetter = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+            
             // Mask user ID if needed
             const displayUserId = isMasked ? 
                 `<span class="masked-id">${maskUserId(user.userId)}</span>` : 
                 `<span class="masked-id revealed">${user.userId}</span>`;
             
             row.innerHTML = `
-                <td>${displayUserId}</td>
-                <td>${user.name}</td>
-                <td>${user.phone}</td>
-                <td>${user.packageDays} days</td>
                 <td>
-                    <div>Package: ৳${user.packageAmount}</div>
-                    <div class="paid-amount">Paid: ৳${user.paidAmount || 0}</div>
-                    ${pendingAmount > 0 ? `<div class="pending-amount">Pending: ৳${pendingAmount}</div>` : ''}
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar">${avatarLetter}</div>
+                        <div>
+                            <div class="fw-bold">${displayUserId}</div>
+                            <small class="text-muted">${user.phone}</small>
+                        </div>
+                    </div>
+                </td>
+                <td class="bangla-font">${user.name}</td>
+                <td>
+                    <div class="amount-breakdown">
+                        <div class="d-flex justify-content-between">
+                            <small>প্যাকেজ:</small>
+                            <small class="fw-bold">৳${user.packageAmount}</small>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small>পরিশোধ:</small>
+                            <small class="paid-amount">৳${user.paidAmount || 0}</small>
+                        </div>
+                        ${pendingAmount > 0 ? `
+                            <div class="d-flex justify-content-between">
+                                <small>বাকি:</small>
+                                <small class="pending-amount fw-bold">৳${pendingAmount}</small>
+                            </div>
+                        ` : `
+                            <div class="text-success text-center">
+                                <small><i class="fas fa-check-circle"></i> সম্পূর্ণ পরিশোধিত</small>
+                            </div>
+                        `}
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge status-inactive">
+                        <span class="status-indicator"></span>
+                        নিষ্ক্রিয়
+                    </span>
+                    <div class="small text-muted mt-1">${user.packageDays} দিন</div>
                 </td>
                 <td class="date-display">${formatDate(user.startDate)}</td>
                 <td class="date-display">${formatDate(user.endDate)}</td>
-                <td><span class="status-badge status-inactive">Inactive</span></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-info action-btn history-user" data-id="${user.id}" title="View History">
-                        <i class="fas fa-history"></i>
-                    </button>
-                    <button class="btn btn-sm btn-warning action-btn renew-user" data-id="${user.id}" title="Renew Package">
-                        <i class="fas fa-redo"></i>
-                    </button>
+                    <div class="quick-actions">
+                        <button class="btn btn-sm btn-outline-info action-btn-sm history-user" data-id="${user.id}" title="ইতিহাস">
+                            <i class="fas fa-history"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning action-btn-sm renew-user" data-id="${user.id}" title="নবায়ন">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             
@@ -2030,12 +2229,23 @@
             const user = users.find(u => u.id === userId);
             if (user) {
                 document.getElementById('edit-user-id').value = user.id;
-                document.getElementById('edit-user-id-field').value = user.userId || '';
-                document.getElementById('edit-user-name').value = user.name;
-                document.getElementById('edit-user-phone').value = user.phone;
-                document.getElementById('edit-start-date').value = user.startDate;
-                document.getElementById('edit-package-days').value = user.packageDays;
-                document.getElementById('edit-package-amount').value = user.packageAmount;
+                
+                // Set current values in the highlighted spans
+                document.getElementById('current-user-id').textContent = user.userId || '';
+                document.getElementById('current-user-name').textContent = user.name;
+                document.getElementById('current-user-phone').textContent = user.phone;
+                document.getElementById('current-start-date').textContent = formatDate(user.startDate);
+                document.getElementById('current-package-days').textContent = `${user.packageDays} days`;
+                document.getElementById('current-package-amount').textContent = `${user.packageAmount} ৳`;
+                document.getElementById('current-end-date').textContent = formatDate(user.endDate);
+                
+                // Clear input fields (optional fields for changes only)
+                document.getElementById('edit-user-id-field').value = '';
+                document.getElementById('edit-user-name').value = '';
+                document.getElementById('edit-user-phone').value = '';
+                document.getElementById('edit-start-date').value = '';
+                document.getElementById('edit-package-days').value = '';
+                document.getElementById('edit-package-amount').value = '';
                 
                 // Set paid amount display (readonly)
                 editPaidAmountDisplay.value = `৳${user.paidAmount || 0}`;
